@@ -11,6 +11,16 @@ export type ApplicationStatus =
   | "rejected"
   | "withdrawn";
 
+export type WorkMode = "remote" | "hybrid" | "onsite";
+
+export type EmploymentType =
+  | "clt"
+  | "pj"
+  | "internship"
+  | "freelance"
+  | "temporary"
+  | "other";
+
 type Timestamp = string;
 
 export type Database = {
@@ -68,12 +78,12 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          company_id: string | null;
+          company_id: string;
           job_title: string;
           job_url: string | null;
           location: string | null;
-          work_mode: string | null;
-          employment_type: string | null;
+          work_mode: WorkMode | null;
+          employment_type: EmploymentType | null;
           salary_min: number | null;
           salary_max: number | null;
           currency: string;
@@ -88,12 +98,12 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          company_id?: string | null;
+          company_id: string;
           job_title: string;
           job_url?: string | null;
           location?: string | null;
-          work_mode?: string | null;
-          employment_type?: string | null;
+          work_mode?: WorkMode | null;
+          employment_type?: EmploymentType | null;
           salary_min?: number | null;
           salary_max?: number | null;
           currency?: string;
@@ -106,7 +116,15 @@ export type Database = {
           updated_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["applications"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "applications_company_owner_fkey";
+            columns: ["company_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       contacts: {
         Row: {
@@ -190,7 +208,15 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["application_history"]["Insert"]
         >;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "application_history_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       documents: {
         Row: {

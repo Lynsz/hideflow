@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BarChart3,
   Building2,
@@ -8,6 +10,7 @@ import {
   SquareKanban,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Logo } from "@/components/brand/logo";
 import { LogoutButton } from "@/features/auth/components/logout-button";
@@ -21,7 +24,6 @@ const navigationItems: NavigationItem[] = [
     label: "Candidaturas",
     href: "/dashboard/candidaturas",
     icon: Columns3,
-    disabled: true,
   },
   {
     label: "Kanban",
@@ -33,7 +35,6 @@ const navigationItems: NavigationItem[] = [
     label: "Empresas",
     href: "/dashboard/empresas",
     icon: Building2,
-    disabled: true,
   },
   {
     label: "Entrevistas",
@@ -63,6 +64,11 @@ function NavigationItemView({
   compact?: boolean;
 }) {
   const Icon = item.icon;
+  const pathname = usePathname();
+  const isActive =
+    item.href === "/dashboard"
+      ? pathname === item.href
+      : pathname.startsWith(item.href);
   const classes = cn(
     "group flex items-center gap-3 rounded-lg px-3 text-sm transition-colors",
     compact
@@ -70,7 +76,9 @@ function NavigationItemView({
       : "h-10",
     item.disabled
       ? "cursor-not-allowed text-muted-foreground/45"
-      : "bg-muted text-foreground",
+      : isActive
+        ? "bg-muted text-foreground"
+        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
   );
 
   if (item.disabled) {
@@ -87,8 +95,15 @@ function NavigationItemView({
   }
 
   return (
-    <Link href={item.href} className={classes} aria-current="page">
-      <Icon className="text-accent size-4" aria-hidden="true" />
+    <Link
+      href={item.href}
+      className={classes}
+      aria-current={isActive ? "page" : undefined}
+    >
+      <Icon
+        className={cn("size-4", isActive && "text-accent")}
+        aria-hidden="true"
+      />
       <span>{item.label}</span>
     </Link>
   );
