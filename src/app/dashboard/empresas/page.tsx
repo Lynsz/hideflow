@@ -1,4 +1,12 @@
-import { Building2, ExternalLink, Linkedin, MapPin, Pencil, Plus, Search } from "lucide-react";
+import {
+  Building2,
+  ExternalLink,
+  LinkIcon,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 
 import { buttonStyles } from "@/components/ui/button";
@@ -16,9 +24,12 @@ type CompaniesPageProps = {
 const FEEDBACK: Record<string, string> = {
   created: "Empresa criada com sucesso.",
   updated: "Empresa atualizada com sucesso.",
+  deleted: "Empresa excluída com sucesso.",
 };
 
-export default async function CompaniesPage({ searchParams }: CompaniesPageProps) {
+export default async function CompaniesPage({
+  searchParams,
+}: CompaniesPageProps) {
   const [{ q = "", feedback = "" }, user] = await Promise.all([
     searchParams,
     getCurrentUser(),
@@ -29,7 +40,9 @@ export default async function CompaniesPage({ searchParams }: CompaniesPageProps
     <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:px-10">
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-muted-foreground text-xs font-medium">Organização</p>
+          <p className="text-muted-foreground text-xs font-medium">
+            Organização
+          </p>
           <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
             Empresas
           </h1>
@@ -63,7 +76,10 @@ export default async function CompaniesPage({ searchParams }: CompaniesPageProps
             placeholder="Pesquisar por nome"
           />
         </label>
-        <button className={buttonStyles({ variant: "secondary" })} type="submit">
+        <button
+          className={buttonStyles({ variant: "secondary" })}
+          type="submit"
+        >
           Buscar
         </button>
       </form>
@@ -72,7 +88,11 @@ export default async function CompaniesPage({ searchParams }: CompaniesPageProps
         {companies.length === 0 ? (
           <div className="border-border bg-surface rounded-xl border">
             <EmptyState
-              title={q ? "Nenhuma empresa encontrada" : "Você ainda não cadastrou nenhuma empresa"}
+              title={
+                q
+                  ? "Nenhuma empresa encontrada"
+                  : "Você ainda não cadastrou nenhuma empresa"
+              }
               description={
                 q
                   ? "Tente pesquisar por outro nome."
@@ -92,7 +112,9 @@ export default async function CompaniesPage({ searchParams }: CompaniesPageProps
                     <Building2 className="size-4" aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-base font-medium">{company.name}</h2>
+                    <h2 className="truncate text-base font-medium">
+                      {company.name}
+                    </h2>
                     {company.location ? (
                       <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
                         <MapPin className="size-3" aria-hidden="true" />
@@ -127,7 +149,7 @@ export default async function CompaniesPage({ searchParams }: CompaniesPageProps
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <Linkedin className="size-4" aria-hidden="true" />
+                      <LinkIcon className="size-4" aria-hidden="true" />
                       LinkedIn
                     </a>
                   ) : null}

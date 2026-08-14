@@ -20,15 +20,20 @@ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
 });
 
 export function formatDate(value: string | null) {
-  return value ? dateFormatter.format(new Date(`${value}T00:00:00Z`)) : "Não informada";
+  return value
+    ? dateFormatter.format(new Date(`${value}T00:00:00Z`))
+    : "Não informada";
 }
 
 export function formatDateTime(value: string) {
   return dateTimeFormatter.format(new Date(value));
 }
 
-export function formatSalary(application: Pick<Application, "salary_min" | "salary_max" | "currency">) {
-  if (application.salary_min === null && application.salary_max === null) return "Não informada";
+export function formatSalary(
+  application: Pick<Application, "salary_min" | "salary_max" | "currency">,
+) {
+  if (application.salary_min === null && application.salary_max === null)
+    return "Não informada";
 
   const formatter = new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -38,7 +43,9 @@ export function formatSalary(application: Pick<Application, "salary_min" | "sala
   if (application.salary_min !== null && application.salary_max !== null) {
     return `${formatter.format(application.salary_min)} – ${formatter.format(application.salary_max)}`;
   }
-  return formatter.format(application.salary_min ?? application.salary_max ?? 0);
+  return formatter.format(
+    application.salary_min ?? application.salary_max ?? 0,
+  );
 }
 
 export function formatWorkMode(value: Application["work_mode"]) {

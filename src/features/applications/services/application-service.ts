@@ -5,11 +5,14 @@ import type { ApplicationFormValues } from "@/features/applications/schemas/appl
 import type {
   ApplicationDetail,
   ApplicationFilters,
-  ApplicationWithCompany,
   PaginatedApplications,
 } from "@/features/applications/types/application";
 import { createClient } from "@/lib/supabase/server";
-import type { ApplicationStatus, EmploymentType, WorkMode } from "@/types/database";
+import type {
+  ApplicationStatus,
+  EmploymentType,
+  WorkMode,
+} from "@/types/database";
 
 const APPLICATION_SELECT = `
   id,
@@ -48,7 +51,9 @@ function toApplicationPayload(values: ApplicationFormValues) {
     job_url: emptyToNull(values.jobUrl),
     location: emptyToNull(values.location),
     work_mode: emptyToNull(values.workMode) as WorkMode | null,
-    employment_type: emptyToNull(values.employmentType) as EmploymentType | null,
+    employment_type: emptyToNull(
+      values.employmentType,
+    ) as EmploymentType | null,
     salary_min: optionalNumber(values.salaryMin),
     salary_max: optionalNumber(values.salaryMax),
     currency: values.currency,
@@ -74,7 +79,8 @@ export async function getApplications(
       .eq("user_id", userId)
       .ilike("name", `%${filters.query}%`);
 
-    if (companiesError) throw new Error("Não foi possível pesquisar candidaturas.");
+    if (companiesError)
+      throw new Error("Não foi possível pesquisar candidaturas.");
     matchingCompanyIds = matchingCompanies.map((company) => company.id);
   }
 
@@ -104,10 +110,7 @@ export async function getApplications(
   } else if (filters.sort === "job") {
     query = query.order("job_title", { ascending: true });
   } else if (filters.sort === "company") {
-    query = query.order("name", {
-      ascending: true,
-      referencedTable: "companies",
-    });
+    query = query.order("company(name)", { ascending: true });
   } else {
     query = query.order("created_at", { ascending: false });
   }
@@ -121,7 +124,7 @@ export async function getApplications(
 
   const total = count ?? 0;
   return {
-    items: data as ApplicationWithCompany[],
+    items: data,
     total,
     totalPages: Math.max(1, Math.ceil(total / APPLICATION_PAGE_SIZE)),
     page: filters.page,
@@ -157,7 +160,7 @@ export async function getApplicationById(
   if (!applicationResult.data) return null;
 
   return {
-    ...(applicationResult.data as ApplicationWithCompany),
+    ...applicationResult.data,
     history: historyResult.data,
   };
 }

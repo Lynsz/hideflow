@@ -8,7 +8,8 @@ const statusStyles: Record<ApplicationStatus, string> = {
   screening: "border-amber-400/20 bg-amber-400/10 text-amber-300",
   hr_interview: "border-violet-400/20 bg-violet-400/10 text-violet-300",
   technical_interview: "border-violet-400/20 bg-violet-400/10 text-violet-300",
-  technical_challenge: "border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-300",
+  technical_challenge:
+    "border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-300",
   final_interview: "border-indigo-400/20 bg-indigo-400/10 text-indigo-300",
   offer: "border-accent/20 bg-accent/10 text-accent",
   hired: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",

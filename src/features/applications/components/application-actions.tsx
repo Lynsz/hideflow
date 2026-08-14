@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
-import { deleteCompany } from "@/features/companies/actions";
+import { deleteApplication } from "@/features/applications/actions";
 
-export function DeleteCompanyButton({
-  companyId,
+export function DeleteApplicationButton({
+  applicationId,
+  jobTitle,
   companyName,
 }: {
-  companyId: string;
+  applicationId: string;
+  jobTitle: string;
   companyName: string;
 }) {
   const router = useRouter();
@@ -19,22 +21,24 @@ export function DeleteCompanyButton({
   const [error, setError] = useState("");
 
   const handleDelete = async () => {
-    const confirmed = window.confirm(
-      `Excluir a empresa “${companyName}”? Esta ação não pode ser desfeita.`,
-    );
-    if (!confirmed) return;
+    if (
+      !window.confirm(
+        `Excluir a candidatura “${jobTitle}” na empresa “${companyName}”?`,
+      )
+    ) {
+      return;
+    }
 
     setIsPending(true);
     setError("");
-    const result = await deleteCompany(companyId);
+    const result = await deleteApplication(applicationId);
     setIsPending(false);
-
     if (!result.success) {
       setError(result.message);
       return;
     }
 
-    router.replace(result.redirectTo ?? "/dashboard/empresas");
+    router.replace(result.redirectTo ?? "/dashboard/candidaturas");
     router.refresh();
   };
 
@@ -42,10 +46,9 @@ export function DeleteCompanyButton({
     <div>
       <button
         type="button"
-        className={buttonStyles({ variant: "ghost", size: "sm" })}
+        className={buttonStyles({ variant: "secondary" })}
         disabled={isPending}
         onClick={handleDelete}
-        aria-label={`Excluir ${companyName}`}
       >
         {isPending ? (
           <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
@@ -55,7 +58,7 @@ export function DeleteCompanyButton({
         Excluir
       </button>
       {error ? (
-        <p className="mt-2 max-w-xs text-xs text-red-300" role="alert">
+        <p role="alert" className="mt-2 text-xs text-red-300">
           {error}
         </p>
       ) : null}

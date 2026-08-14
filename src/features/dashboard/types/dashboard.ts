@@ -1,4 +1,7 @@
-export type MetricKey = "applications" | "sent" | "interviews" | "offers";
+import type { ApplicationWithCompany } from "@/features/applications/types/application";
+
+export type MetricKey =
+  "applications" | "active" | "interviews" | "offers" | "hired" | "rejected";
 
 export type DashboardMetric = {
   key: MetricKey;
@@ -7,25 +10,7 @@ export type DashboardMetric = {
   supportingText: string;
 };
 
-export type PipelineItem = {
-  label: string;
-  value: number;
-  percentage: number;
-};
-
-export type ApplicationStatus =
-  "Aplicada" | "Triagem" | "Entrevista" | "Proposta";
-
-export type RecentApplication = {
-  id: string;
-  company: string;
-  role: string;
-  status: ApplicationStatus;
-  date: string;
-};
-
 export type DashboardData = {
   metrics: DashboardMetric[];
-  pipeline: PipelineItem[];
-  recentApplications: RecentApplication[];
+  recentApplications: ApplicationWithCompany[];
 };

@@ -22,15 +22,19 @@ export type ApplicationActionResult = {
 
 const INVALID_APPLICATION = "Revise os dados da candidatura e tente novamente.";
 
-export async function createApplication(input: unknown): Promise<ApplicationActionResult> {
+export async function createApplication(
+  input: unknown,
+): Promise<ApplicationActionResult> {
   const user = await getCurrentUser();
-  if (!user) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!user)
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
 
   const parsed = applicationSchema.safeParse(input);
   if (!parsed.success) return { success: false, message: INVALID_APPLICATION };
 
   const { data, error } = await insertApplication(user.id, parsed.data);
-  if (error || !data) return { success: false, message: "Não foi possível criar a candidatura." };
+  if (error || !data)
+    return { success: false, message: "Não foi possível criar a candidatura." };
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/candidaturas");
@@ -46,7 +50,8 @@ export async function updateApplication(
   input: unknown,
 ): Promise<ApplicationActionResult> {
   const user = await getCurrentUser();
-  if (!user) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!user)
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
 
   const parsed = applicationSchema.safeParse(input);
   if (!parsed.success) return { success: false, message: INVALID_APPLICATION };
@@ -57,7 +62,10 @@ export async function updateApplication(
     parsed.data,
   );
   if (error || !data) {
-    return { success: false, message: "Candidatura não encontrada ou não autorizada." };
+    return {
+      success: false,
+      message: "Candidatura não encontrada ou não autorizada.",
+    };
   }
 
   revalidatePath("/dashboard");
@@ -70,9 +78,12 @@ export async function updateApplication(
   };
 }
 
-export async function changeApplicationStatus(input: unknown): Promise<ApplicationActionResult> {
+export async function changeApplicationStatus(
+  input: unknown,
+): Promise<ApplicationActionResult> {
   const user = await getCurrentUser();
-  if (!user) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!user)
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
 
   const parsed = statusUpdateSchema.safeParse(input);
   if (!parsed.success) return { success: false, message: "Status inválido." };
@@ -82,7 +93,8 @@ export async function changeApplicationStatus(input: unknown): Promise<Applicati
     parsed.data.applicationId,
     parsed.data.status,
   );
-  if (error) return { success: false, message: "Não foi possível alterar o status." };
+  if (error)
+    return { success: false, message: "Não foi possível alterar o status." };
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/candidaturas");
@@ -94,11 +106,15 @@ export async function deleteApplication(
   applicationId: string,
 ): Promise<ApplicationActionResult> {
   const user = await getCurrentUser();
-  if (!user) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!user)
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
 
   const { data, error } = await deleteApplicationRecord(user.id, applicationId);
   if (error || !data) {
-    return { success: false, message: "Candidatura não encontrada ou não autorizada." };
+    return {
+      success: false,
+      message: "Candidatura não encontrada ou não autorizada.",
+    };
   }
 
   revalidatePath("/dashboard");

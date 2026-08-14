@@ -32,8 +32,11 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   withdrawn: "Desisti",
 };
 
-export const WORK_MODES = ["remote", "hybrid", "onsite"] as const satisfies
-  readonly WorkMode[];
+export const WORK_MODES = [
+  "remote",
+  "hybrid",
+  "onsite",
+] as const satisfies readonly WorkMode[];
 
 export const WORK_MODE_LABELS: Record<WorkMode, string> = {
   remote: "Remoto",

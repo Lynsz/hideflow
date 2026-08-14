@@ -1,71 +1,108 @@
+import "server-only";
+
+import { cache } from "react";
+
+import { getCurrentUser } from "@/features/auth/services/get-current-user";
+import {
+  ACTIVE_APPLICATION_STATUSES,
+  INTERVIEW_APPLICATION_STATUSES,
+} from "@/features/applications/constants";
 import type { DashboardData } from "@/features/dashboard/types/dashboard";
+import { createClient } from "@/lib/supabase/server";
 
-const dashboardData: DashboardData = {
-  metrics: [
-    {
-      key: "applications",
-      label: "Total de candidaturas",
-      value: 24,
-      supportingText: "+4 neste mês",
-    },
-    {
-      key: "sent",
-      label: "Candidaturas enviadas",
-      value: 16,
-      supportingText: "67% do total",
-    },
-    {
-      key: "interviews",
-      label: "Entrevistas",
-      value: 5,
-      supportingText: "+2 esta semana",
-    },
-    {
-      key: "offers",
-      label: "Propostas recebidas",
-      value: 2,
-      supportingText: "8% de conversão",
-    },
-  ],
-  pipeline: [
-    { label: "Salvas", value: 8, percentage: 100 },
-    { label: "Aplicadas", value: 16, percentage: 80 },
-    { label: "Triagem", value: 7, percentage: 48 },
-    { label: "Entrevistas", value: 5, percentage: 34 },
-    { label: "Propostas", value: 2, percentage: 16 },
-  ],
-  recentApplications: [
-    {
-      id: "app-01",
-      company: "Nubank",
-      role: "Product Designer",
-      status: "Entrevista",
-      date: "12 ago 2026",
-    },
-    {
-      id: "app-02",
-      company: "Vercel",
-      role: "Frontend Engineer",
-      status: "Triagem",
-      date: "10 ago 2026",
-    },
-    {
-      id: "app-03",
-      company: "Acme Labs",
-      role: "Full Stack Developer",
-      status: "Aplicada",
-      date: "08 ago 2026",
-    },
-    {
-      id: "app-04",
-      company: "Orbit",
-      role: "Software Engineer",
-      status: "Proposta",
-      date: "04 ago 2026",
-    },
-  ],
-};
+const RECENT_SELECT = `
+  id,
+  user_id,
+  company_id,
+  job_title,
+  job_url,
+  location,
+  work_mode,
+  employment_type,
+  salary_min,
+  salary_max,
+  currency,
+  applied_at,
+  source,
+  description,
+  notes,
+  status,
+  created_at,
+  updated_at,
+  company:companies!applications_company_owner_fkey(id, name)
+` as const;
 
-export async function getDashboardData(): Promise<DashboardData> {
-  return dashboardData;
-}
+export const getDashboardData = cache(async (): Promise<DashboardData> => {
+  const user = await getCurrentUser();
+  if (!user) return { metrics: [], recentApplications: [] };
+
+  const supabase = await createClient();
+  const count = () =>
+    supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+  const [total, active, interviews, offers, hired, rejected, recent] =
+    await Promise.all([
+      count(),
+      count().in("status", [...ACTIVE_APPLICATION_STATUSES]),
+      count().in("status", [...INTERVIEW_APPLICATION_STATUSES]),
+      count().eq("status", "offer"),
+      count().eq("status", "hired"),
+      count().eq("status", "rejected"),
+      supabase
+        .from("applications")
+        .select(RECENT_SELECT)
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(5),
+    ]);
+
+  const results = [total, active, interviews, offers, hired, rejected, recent];
+  if (results.some((result) => result.error)) {
+    throw new Error("Não foi possível carregar o dashboard.");
+  }
+
+  return {
+    metrics: [
+      {
+        key: "applications",
+        label: "Total de candidaturas",
+        value: total.count ?? 0,
+        supportingText: "Todos os registros",
+      },
+      {
+        key: "active",
+        label: "Em processo",
+        value: active.count ?? 0,
+        supportingText: "Oportunidades ativas",
+      },
+      {
+        key: "interviews",
+        label: "Entrevistas",
+        value: interviews.count ?? 0,
+        supportingText: "Etapas de entrevista e desafio",
+      },
+      {
+        key: "offers",
+        label: "Propostas",
+        value: offers.count ?? 0,
+        supportingText: "Aguardando decisão",
+      },
+      {
+        key: "hired",
+        label: "Contratações",
+        value: hired.count ?? 0,
+        supportingText: "Processos concluídos",
+      },
+      {
+        key: "rejected",
+        label: "Rejeições",
+        value: rejected.count ?? 0,
+        supportingText: "Processos encerrados",
+      },
+    ],
+    recentApplications: recent.data ?? [],
+  };
+});

@@ -5,11 +5,12 @@ import {
   EMPLOYMENT_TYPES,
   WORK_MODES,
 } from "@/features/applications/constants";
+import { isHttpUrl } from "@/lib/validation/url";
 
 const optionalUrl = z
   .string()
   .trim()
-  .refine((value) => value === "" || z.url().safeParse(value).success, {
+  .refine((value) => value === "" || isHttpUrl(value), {
     message: "Informe uma URL completa e válida.",
   });
 
@@ -17,7 +18,8 @@ const optionalSalary = z
   .string()
   .trim()
   .refine(
-    (value) => value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 0),
+    (value) =>
+      value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 0),
     "O salário deve ser um número não negativo.",
   );
 
@@ -48,7 +50,10 @@ export const applicationSchema = z
       ),
     source: z.string().trim().max(120, "Use no máximo 120 caracteres."),
     status: z.enum(APPLICATION_STATUSES),
-    description: z.string().trim().max(10000, "Use no máximo 10.000 caracteres."),
+    description: z
+      .string()
+      .trim()
+      .max(10000, "Use no máximo 10.000 caracteres."),
     notes: z.string().trim().max(10000, "Use no máximo 10.000 caracteres."),
   })
   .superRefine((values, context) => {

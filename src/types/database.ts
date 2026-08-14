@@ -14,12 +14,7 @@ export type ApplicationStatus =
 export type WorkMode = "remote" | "hybrid" | "onsite";
 
 export type EmploymentType =
-  | "clt"
-  | "pj"
-  | "internship"
-  | "freelance"
-  | "temporary"
-  | "other";
+  "clt" | "pj" | "internship" | "freelance" | "temporary" | "other";
 
 type Timestamp = string;
 

@@ -6,7 +6,10 @@ export default function CompaniesLoading() {
       <div className="bg-muted mt-7 h-11 rounded-lg" />
       <div className="mt-6 grid gap-3 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="border-border bg-surface h-48 rounded-xl border" />
+          <div
+            key={index}
+            className="border-border bg-surface h-48 rounded-xl border"
+          />
         ))}
       </div>
       <span className="sr-only">Carregando empresas</span>

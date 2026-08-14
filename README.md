@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 2 implementada no código — banco e autenticação Supabase.** Para usar o fluxo real, ainda é necessário criar/conectar um projeto Supabase, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 3 implementada no código — autenticação, empresas, candidaturas e métricas reais.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -23,7 +23,10 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Proteção server-side do dashboard
 - Redirect de usuários autenticados para `/dashboard`
 - Profile criado automaticamente por trigger após o cadastro
-- Dashboard com identidade real e cards ainda mockados
+- CRUD completo de empresas com busca e bloqueio de exclusão quando há candidaturas
+- CRUD completo de candidaturas com detalhes, busca, filtros, ordenação e paginação
+- Histórico automático e append-only de mudanças de status
+- Dashboard com identidade, métricas e candidaturas recentes reais
 - Schema versionado com sete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -148,6 +151,40 @@ technical_challenge, final_interview, offer, hired, rejected, withdrawn
 
 O ENUM foi escolhido porque o domínio é fechado, reutilizado e central para a aplicação. Modalidade e tipo de contrato usam `CHECK`, pois são atributos auxiliares que podem evoluir com mais frequência.
 
+## Etapa 3: empresas e candidaturas
+
+### Empresas
+
+- `/dashboard/empresas`: pesquisa server-side por nome e listagem responsiva.
+- `/dashboard/empresas/nova`: cadastro com React Hook Form, Zod e Server Action.
+- `/dashboard/empresas/[id]/editar`: edição com ownership verificado no servidor.
+- A exclusão consulta candidaturas associadas e é bloqueada quando a empresa está em uso; a FK também usa `ON DELETE RESTRICT`.
+
+### Candidaturas
+
+- `/dashboard/candidaturas`: busca por vaga ou empresa, filtros por status, modalidade, contrato e empresa.
+- Ordenação por criação, empresa ou vaga.
+- Paginação server-side de 10 registros com filtros representados na URL.
+- `/dashboard/candidaturas/nova`: cadastro vinculado a uma empresa do usuário.
+- `/dashboard/candidaturas/[id]`: detalhes, mudança de status, histórico e exclusão.
+- `/dashboard/candidaturas/[id]/editar`: reutiliza o formulário completo.
+- Registros inexistentes ou pertencentes a outra conta retornam o mesmo estado 404.
+
+As leituras acontecem em Server Components por meio de serviços em `features/*/services`. Todas as mutations usam Server Actions, validam novamente com Zod e derivam `user_id` da sessão autenticada — nenhum formulário aceita esse campo.
+
+### Histórico de status
+
+A migration `20260814224241_implement_stage_3_companies_applications.sql` adiciona o trigger `applications_record_status_change`. Um evento é inserido em `application_history` somente quando `old.status IS DISTINCT FROM new.status`. A tabela permanece legível pelo proprietário via RLS, mas inserts, updates e deletes diretos foram revogados dos clientes autenticados.
+
+### Migration incremental
+
+Além do histórico, a migration da Etapa 3:
+
+- torna `applications.company_id` obrigatório;
+- amplia `employment_type` com `temporary` e `other`;
+- adiciona índices compostos/condicionais para ownership, empresa, criação, modalidade, contrato e histórico;
+- preserva todas as policies RLS criadas na Etapa 2.
+
 ## Row Level Security
 
 RLS nasce habilitado nas sete tabelas.
@@ -190,6 +227,8 @@ src/
 ├── app/
 │   ├── (auth)/
 │   ├── auth/callback/
+│   ├── applications/
+│   ├── companies/
 │   └── dashboard/
 ├── components/
 ├── features/
@@ -207,6 +246,10 @@ Os testes unitários cobrem:
 - requisitos e confirmação de senha;
 - tradução segura de erros de autenticação;
 - bloqueio de open redirects.
+- schemas de empresa e candidatura;
+- URLs opcionais, enums e regras salariais;
+- normalização segura dos filtros e preservação na paginação;
+- labels e formatação crítica de candidaturas.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -214,8 +257,8 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 
 - [x] **Etapa 1:** bootstrap, arquitetura e UI base
 - [x] **Etapa 2:** migrations, RLS e autenticação SSR
-- [ ] **Etapa 3:** CRUD de empresas e candidaturas
-- [ ] **Etapa 4:** Kanban, contatos e entrevistas
+- [x] **Etapa 3:** CRUD de empresas e candidaturas
+- [ ] **Etapa 4:** Kanban interativo e gerenciamento avançado do pipeline
 - [ ] **Etapa 5:** documentos, histórico e analytics
 - [ ] **Etapa 6:** suíte E2E, observabilidade e deploy final
 

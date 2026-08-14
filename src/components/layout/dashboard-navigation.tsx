@@ -58,13 +58,14 @@ const navigationItems: NavigationItem[] = [
 
 function NavigationItemView({
   item,
+  pathname,
   compact = false,
 }: {
   item: NavigationItem;
+  pathname: string;
   compact?: boolean;
 }) {
   const Icon = item.icon;
-  const pathname = usePathname();
   const isActive =
     item.href === "/dashboard"
       ? pathname === item.href
@@ -119,6 +120,8 @@ function getInitials(fullName: string) {
 }
 
 export function DashboardSidebar({ user }: { user: AuthenticatedUser }) {
+  const pathname = usePathname();
+
   return (
     <aside className="border-border bg-surface fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r md:flex">
       <div className="border-border flex h-18 items-center border-b px-5">
@@ -126,7 +129,11 @@ export function DashboardSidebar({ user }: { user: AuthenticatedUser }) {
       </div>
       <nav className="flex-1 space-y-1 p-3" aria-label="Navegação do dashboard">
         {navigationItems.map((item) => (
-          <NavigationItemView key={item.label} item={item} />
+          <NavigationItemView
+            key={item.label}
+            item={item}
+            pathname={pathname}
+          />
         ))}
       </nav>
       <div className="border-border border-t p-4">
@@ -148,6 +155,8 @@ export function DashboardSidebar({ user }: { user: AuthenticatedUser }) {
 }
 
 export function DashboardMobileNavigation() {
+  const pathname = usePathname();
+
   return (
     <>
       <header className="border-border bg-surface/95 fixed inset-x-0 top-0 z-20 flex h-16 items-center border-b px-4 backdrop-blur md:hidden">
@@ -161,7 +170,12 @@ export function DashboardMobileNavigation() {
         aria-label="Navegação móvel do dashboard"
       >
         {navigationItems.map((item) => (
-          <NavigationItemView key={item.label} item={item} compact />
+          <NavigationItemView
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            compact
+          />
         ))}
       </nav>
     </>

@@ -7,11 +7,20 @@ import type {
   ApplicationFilters,
   ApplicationSort,
 } from "@/features/applications/types/application";
-import type { ApplicationStatus, EmploymentType, WorkMode } from "@/types/database";
+import type {
+  ApplicationStatus,
+  EmploymentType,
+  WorkMode,
+} from "@/types/database";
 
 type RawFilters = Record<string, string | string[] | undefined>;
 
-const SORTS: readonly ApplicationSort[] = ["recent", "oldest", "company", "job"];
+const SORTS: readonly ApplicationSort[] = [
+  "recent",
+  "oldest",
+  "company",
+  "job",
+];
 
 function first(value: string | string[] | undefined) {
   return typeof value === "string" ? value : "";
@@ -22,6 +31,7 @@ export function sanitizeSearchTerm(value: string) {
     .trim()
     .replace(/[,*%_().\\]/g, " ")
     .replace(/\s+/g, " ")
+    .trim()
     .slice(0, 120);
 }
 

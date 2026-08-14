@@ -18,8 +18,8 @@ export type ApplicationSort = "recent" | "oldest" | "company" | "job";
 export type ApplicationFilters = {
   query: string;
   status: ApplicationStatus | "";
-  workMode: Application["work_mode"] | "";
-  employmentType: Application["employment_type"] | "";
+  workMode: NonNullable<Application["work_mode"]> | "";
+  employmentType: NonNullable<Application["employment_type"]> | "";
   companyId: string;
   sort: ApplicationSort;
   page: number;

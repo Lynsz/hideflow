@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { CompanyFormValues } from "@/features/companies/schemas/company-schema";
-import type { Company, CompanyOption } from "@/features/companies/types/company";
+import type {
+  Company,
+  CompanyOption,
+} from "@/features/companies/types/company";
 import { createClient } from "@/lib/supabase/server";
 
 function emptyToNull(value: string) {
@@ -22,7 +25,9 @@ export async function getCompanies(userId: string, search = "") {
   const supabase = await createClient();
   let query = supabase
     .from("companies")
-    .select("id, user_id, name, website, linkedin_url, location, notes, created_at, updated_at")
+    .select(
+      "id, user_id, name, website, linkedin_url, location, notes, created_at, updated_at",
+    )
     .eq("user_id", userId)
     .order("name", { ascending: true });
 
@@ -50,7 +55,9 @@ export async function getCompanyById(userId: string, companyId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("companies")
-    .select("id, user_id, name, website, linkedin_url, location, notes, created_at, updated_at")
+    .select(
+      "id, user_id, name, website, linkedin_url, location, notes, created_at, updated_at",
+    )
     .eq("id", companyId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -101,6 +108,10 @@ export async function deleteCompanyRecord(userId: string, companyId: string) {
     .eq("user_id", userId)
     .select("id")
     .maybeSingle();
+
+  if (error?.code === "23503") {
+    return { blocked: true, data: null, error: null };
+  }
 
   return { blocked: false, data, error };
 }

@@ -1,9 +1,11 @@
 import { z } from "zod";
 
+import { isHttpUrl } from "@/lib/validation/url";
+
 const optionalUrl = z
   .string()
   .trim()
-  .refine((value) => value === "" || z.url().safeParse(value).success, {
+  .refine((value) => value === "" || isHttpUrl(value), {
     message: "Informe uma URL completa e válida.",
   });
 

@@ -108,7 +108,9 @@ export function CompanyForm({ companyId, defaultValues }: CompanyFormProps) {
             {...register("linkedinUrl")}
           />
           {errors.linkedinUrl ? (
-            <span className={fieldErrorStyles}>{errors.linkedinUrl.message}</span>
+            <span className={fieldErrorStyles}>
+              {errors.linkedinUrl.message}
+            </span>
           ) : null}
         </label>
 
@@ -153,7 +155,11 @@ export function CompanyForm({ companyId, defaultValues }: CompanyFormProps) {
         >
           Cancelar
         </Link>
-        <button className={buttonStyles()} type="submit" disabled={isSubmitting}>
+        <button
+          className={buttonStyles()}
+          type="submit"
+          disabled={isSubmitting}
+        >
           {isSubmitting ? (
             <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
           ) : (
