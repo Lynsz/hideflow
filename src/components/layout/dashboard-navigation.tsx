@@ -10,6 +10,8 @@ import {
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
+import { LogoutButton } from "@/features/auth/components/logout-button";
+import type { AuthenticatedUser } from "@/features/auth/types/auth";
 import { cn } from "@/lib/utils";
 import type { NavigationItem } from "@/types/navigation";
 
@@ -92,7 +94,16 @@ function NavigationItemView({
   );
 }
 
-export function DashboardSidebar() {
+function getInitials(fullName: string) {
+  return fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
+export function DashboardSidebar({ user }: { user: AuthenticatedUser }) {
   return (
     <aside className="border-border bg-surface fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r md:flex">
       <div className="border-border flex h-18 items-center border-b px-5">
@@ -106,15 +117,16 @@ export function DashboardSidebar() {
       <div className="border-border border-t p-4">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <span className="bg-accent/10 text-accent grid size-8 place-items-center rounded-full text-xs font-semibold">
-            MS
+            {getInitials(user.fullName)}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-xs font-medium">Marina Silva</p>
+            <p className="truncate text-xs font-medium">{user.fullName}</p>
             <p className="text-muted-foreground truncate text-[11px]">
-              Modo demonstração
+              {user.email}
             </p>
           </div>
         </div>
+        <LogoutButton />
       </div>
     </aside>
   );
@@ -125,9 +137,9 @@ export function DashboardMobileNavigation() {
     <>
       <header className="border-border bg-surface/95 fixed inset-x-0 top-0 z-20 flex h-16 items-center border-b px-4 backdrop-blur md:hidden">
         <Logo href="/dashboard" />
-        <span className="border-accent/20 bg-accent/5 text-accent ml-auto rounded-full border px-2.5 py-1 text-[10px]">
-          Demo
-        </span>
+        <div className="ml-auto">
+          <LogoutButton compact />
+        </div>
       </header>
       <nav
         className="border-border bg-surface/95 fixed inset-x-0 bottom-0 z-20 flex overflow-x-auto border-t px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"

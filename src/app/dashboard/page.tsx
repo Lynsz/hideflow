@@ -11,6 +11,7 @@ import {
 import { buttonStyles } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/features/dashboard/components/status-badge";
+import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { getDashboardData } from "@/features/dashboard/services/get-dashboard-data";
 import type { MetricKey } from "@/features/dashboard/types/dashboard";
 
@@ -22,7 +23,11 @@ const metricIcons = {
 } satisfies Record<MetricKey, typeof BriefcaseBusiness>;
 
 export default async function DashboardPage() {
-  const data = await getDashboardData();
+  const [data, user] = await Promise.all([
+    getDashboardData(),
+    getCurrentUser(),
+  ]);
+  const firstName = user?.fullName.split(/\s+/)[0] || "Usuário";
 
   return (
     <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:px-10">
@@ -37,7 +42,7 @@ export default async function DashboardPage() {
             </span>
           </div>
           <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
-            Bom dia, Marina
+            Olá, {firstName}
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">
             Aqui está o panorama da sua busca por emprego.

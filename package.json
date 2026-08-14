@@ -9,8 +9,17 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:lint": "supabase db lint --local --fail-on error",
+    "db:push": "supabase db push --linked",
+    "db:migration:new": "supabase migration new",
+    "db:types": "node scripts/generate-database-types.mjs"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -38,7 +47,9 @@
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.6",
     "prettier-plugin-tailwindcss": "0.8.1",
+    "supabase": "2.114.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.10"
   }
 }

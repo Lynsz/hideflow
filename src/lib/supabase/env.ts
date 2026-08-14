@@ -2,15 +2,13 @@ import { z } from "zod";
 
 const supabaseEnvSchema = z.object({
   url: z.url("NEXT_PUBLIC_SUPABASE_URL deve ser uma URL válida."),
-  publishableKey: z
-    .string()
-    .min(1, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY é obrigatória."),
+  anonKey: z.string().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY é obrigatória."),
 });
 
 export function getSupabaseEnv() {
   const result = supabaseEnvSchema.safeParse({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
 
   if (!result.success) {

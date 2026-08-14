@@ -1,11 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { buttonStyles } from "@/components/ui/button";
+import { login, signUp } from "@/features/auth/actions";
 import {
   loginSchema,
   signUpSchema,
@@ -15,10 +17,17 @@ import {
 
 type AuthFormProps = {
   mode: "login" | "signup";
+  redirectTo?: string;
+  initialError?: string;
+};
+
+type Feedback = {
+  kind: "success" | "error";
+  message: string;
 };
 
 const inputStyles =
-  "h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-accent/60 focus:ring-2 focus:ring-accent/10";
+  "h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-accent/60 focus:ring-2 focus:ring-accent/10 disabled:cursor-not-allowed disabled:opacity-60";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -30,19 +39,74 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-function LoginForm() {
-  const [notice, setNotice] = useState("");
+function FormFeedback({ feedback }: { feedback: Feedback | null }) {
+  if (!feedback) return null;
+
+  return (
+    <p
+      role={feedback.kind === "error" ? "alert" : "status"}
+      className={
+        feedback.kind === "error"
+          ? "rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-xs text-red-300"
+          : "border-accent/20 bg-accent/5 text-accent rounded-lg border p-3 text-xs"
+      }
+    >
+      {feedback.message}
+    </p>
+  );
+}
+
+function SubmitButton({
+  isSubmitting,
+  label,
+}: {
+  isSubmitting: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      className={buttonStyles({ className: "mt-2 w-full" })}
+      type="submit"
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? (
+        <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <ArrowRight className="size-4" aria-hidden="true" />
+      )}
+      {isSubmitting ? "Aguarde…" : label}
+    </button>
+  );
+}
+
+function LoginForm({
+  redirectTo,
+  initialError,
+}: Pick<AuthFormProps, "redirectTo" | "initialError">) {
+  const router = useRouter();
+  const [feedback, setFeedback] = useState<Feedback | null>(
+    initialError ? { kind: "error", message: initialError } : null,
+  );
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = () => {
-    setNotice("Login será conectado ao Supabase Auth na Etapa 2.");
+  const onSubmit = async (values: LoginFormValues) => {
+    setFeedback(null);
+    const result = await login(values, redirectTo);
+
+    if (!result.success) {
+      setFeedback({ kind: "error", message: result.message });
+      return;
+    }
+
+    router.replace(result.redirectTo ?? "/dashboard");
+    router.refresh();
   };
 
   return (
@@ -54,6 +118,7 @@ function LoginForm() {
           type="email"
           autoComplete="email"
           placeholder="voce@exemplo.com"
+          disabled={isSubmitting}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "email-error" : undefined}
           className={`${inputStyles} mt-2`}
@@ -69,6 +134,7 @@ function LoginForm() {
           type="password"
           autoComplete="current-password"
           placeholder="Mínimo de 8 caracteres"
+          disabled={isSubmitting}
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? "password-error" : undefined}
           className={`${inputStyles} mt-2`}
@@ -77,61 +143,65 @@ function LoginForm() {
         <FieldError id="password-error" message={errors.password?.message} />
       </label>
 
-      <button
-        className={buttonStyles({ className: "mt-2 w-full" })}
-        type="submit"
-      >
-        Entrar
-        <ArrowRight className="size-4" aria-hidden="true" />
-      </button>
-
-      {notice ? (
-        <p
-          role="status"
-          className="border-accent/20 bg-accent/5 text-accent rounded-lg border p-3 text-xs"
-        >
-          {notice}
-        </p>
-      ) : null}
+      <SubmitButton isSubmitting={isSubmitting} label="Entrar" />
+      <FormFeedback feedback={feedback} />
     </form>
   );
 }
 
 function SignUpForm() {
-  const [notice, setNotice] = useState("");
+  const router = useRouter();
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    reset,
+    formState: { errors, isSubmitting },
   } = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      name: "",
+      fullName: "",
       email: "",
       password: "",
       passwordConfirmation: "",
     },
   });
 
-  const onSubmit = () => {
-    setNotice("Cadastro será conectado ao Supabase Auth na Etapa 2.");
+  const onSubmit = async (values: SignUpFormValues) => {
+    setFeedback(null);
+    const result = await signUp(values);
+
+    if (!result.success) {
+      setFeedback({ kind: "error", message: result.message });
+      return;
+    }
+
+    if (result.redirectTo) {
+      router.replace(result.redirectTo);
+      router.refresh();
+      return;
+    }
+
+    reset();
+    setFeedback({ kind: "success", message: result.message });
   };
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <label className="block text-sm font-medium" htmlFor="name">
-        Nome
+      <label className="block text-sm font-medium" htmlFor="full-name">
+        Nome completo
         <input
-          id="name"
+          id="full-name"
           type="text"
           autoComplete="name"
-          placeholder="Seu nome"
-          aria-invalid={Boolean(errors.name)}
-          aria-describedby={errors.name ? "name-error" : undefined}
+          placeholder="Seu nome completo"
+          disabled={isSubmitting}
+          aria-invalid={Boolean(errors.fullName)}
+          aria-describedby={errors.fullName ? "full-name-error" : undefined}
           className={`${inputStyles} mt-2`}
-          {...register("name")}
+          {...register("fullName")}
         />
-        <FieldError id="name-error" message={errors.name?.message} />
+        <FieldError id="full-name-error" message={errors.fullName?.message} />
       </label>
 
       <label className="block text-sm font-medium" htmlFor="signup-email">
@@ -141,6 +211,7 @@ function SignUpForm() {
           type="email"
           autoComplete="email"
           placeholder="voce@exemplo.com"
+          disabled={isSubmitting}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "signup-email-error" : undefined}
           className={`${inputStyles} mt-2`}
@@ -155,7 +226,8 @@ function SignUpForm() {
           id="signup-password"
           type="password"
           autoComplete="new-password"
-          placeholder="Mínimo de 8 caracteres"
+          placeholder="8+ caracteres, com letra e número"
+          disabled={isSubmitting}
           aria-invalid={Boolean(errors.password)}
           aria-describedby={
             errors.password ? "signup-password-error" : undefined
@@ -179,6 +251,7 @@ function SignUpForm() {
           type="password"
           autoComplete="new-password"
           placeholder="Repita sua senha"
+          disabled={isSubmitting}
           aria-invalid={Boolean(errors.passwordConfirmation)}
           aria-describedby={
             errors.passwordConfirmation
@@ -194,26 +267,16 @@ function SignUpForm() {
         />
       </label>
 
-      <button
-        className={buttonStyles({ className: "mt-2 w-full" })}
-        type="submit"
-      >
-        Criar conta
-        <ArrowRight className="size-4" aria-hidden="true" />
-      </button>
-
-      {notice ? (
-        <p
-          role="status"
-          className="border-accent/20 bg-accent/5 text-accent rounded-lg border p-3 text-xs"
-        >
-          {notice}
-        </p>
-      ) : null}
+      <SubmitButton isSubmitting={isSubmitting} label="Criar conta" />
+      <FormFeedback feedback={feedback} />
     </form>
   );
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
-  return mode === "login" ? <LoginForm /> : <SignUpForm />;
+export function AuthForm({ mode, redirectTo, initialError }: AuthFormProps) {
+  return mode === "login" ? (
+    <LoginForm redirectTo={redirectTo} initialError={initialError} />
+  ) : (
+    <SignUpForm />
+  );
 }
