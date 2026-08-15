@@ -1,10 +1,14 @@
 import "server-only";
 
-import { APPLICATION_PAGE_SIZE } from "@/features/applications/constants";
+import {
+  APPLICATION_PAGE_SIZE,
+  KANBAN_APPLICATION_LIMIT,
+} from "@/features/applications/constants";
 import type { ApplicationFormValues } from "@/features/applications/schemas/application-schema";
 import type {
   ApplicationDetail,
   ApplicationFilters,
+  KanbanApplicationsResult,
   PaginatedApplications,
 } from "@/features/applications/types/application";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +36,21 @@ const APPLICATION_SELECT = `
   notes,
   status,
   created_at,
+  updated_at,
+  company:companies!applications_company_owner_fkey(id, name)
+` as const;
+
+const KANBAN_APPLICATION_SELECT = `
+  id,
+  job_title,
+  location,
+  work_mode,
+  employment_type,
+  salary_min,
+  salary_max,
+  currency,
+  applied_at,
+  status,
   updated_at,
   company:companies!applications_company_owner_fkey(id, name)
 ` as const;
@@ -165,6 +184,28 @@ export async function getApplicationById(
   };
 }
 
+export async function getKanbanApplications(
+  userId: string,
+): Promise<KanbanApplicationsResult> {
+  const supabase = await createClient();
+  const { data, count, error } = await supabase
+    .from("applications")
+    .select(KANBAN_APPLICATION_SELECT, { count: "exact" })
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .order("id", { ascending: true })
+    .range(0, KANBAN_APPLICATION_LIMIT - 1);
+
+  if (error) throw new Error("Não foi possível carregar o Kanban.");
+
+  const total = count ?? 0;
+  return {
+    items: data,
+    total,
+    isLimited: total > KANBAN_APPLICATION_LIMIT,
+  };
+}
+
 export async function insertApplication(
   userId: string,
   values: ApplicationFormValues,
@@ -195,17 +236,37 @@ export async function updateApplicationRecord(
 export async function updateApplicationStatusRecord(
   userId: string,
   applicationId: string,
+  previousStatus: ApplicationStatus,
   status: ApplicationStatus,
 ) {
   const supabase = await createClient();
-  return supabase
+  const { data, error } = await supabase
     .from("applications")
     .update({ status })
     .eq("id", applicationId)
     .eq("user_id", userId)
+    .eq("status", previousStatus)
     .neq("status", status)
-    .select("id")
+    .select("id, status")
     .maybeSingle();
+
+  if (error) return { outcome: "error" as const, error };
+  if (data) return { outcome: "updated" as const, status: data.status };
+
+  const current = await supabase
+    .from("applications")
+    .select("status")
+    .eq("id", applicationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (current.error) return { outcome: "error" as const, error: current.error };
+  if (!current.data) return { outcome: "not_found" as const };
+  if (current.data.status === status) {
+    return { outcome: "unchanged" as const, status: current.data.status };
+  }
+
+  return { outcome: "conflict" as const, status: current.data.status };
 }
 
 export async function deleteApplicationRecord(

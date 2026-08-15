@@ -73,12 +73,20 @@ export const APPLICATION_SOURCES = [
 ] as const;
 
 export const ACTIVE_APPLICATION_STATUSES: readonly ApplicationStatus[] = [
+  "saved",
   "applied",
   "screening",
   "hr_interview",
   "technical_interview",
   "technical_challenge",
   "final_interview",
+  "offer",
+];
+
+export const FINAL_APPLICATION_STATUSES: readonly ApplicationStatus[] = [
+  "hired",
+  "rejected",
+  "withdrawn",
 ];
 
 export const INTERVIEW_APPLICATION_STATUSES: readonly ApplicationStatus[] = [
@@ -89,3 +97,4 @@ export const INTERVIEW_APPLICATION_STATUSES: readonly ApplicationStatus[] = [
 ];
 
 export const APPLICATION_PAGE_SIZE = 10;
+export const KANBAN_APPLICATION_LIMIT = 300;

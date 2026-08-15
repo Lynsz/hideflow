@@ -29,7 +29,6 @@ const navigationItems: NavigationItem[] = [
     label: "Kanban",
     href: "/dashboard/kanban",
     icon: SquareKanban,
-    disabled: true,
   },
   {
     label: "Empresas",

@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 3 implementada no código — autenticação, empresas, candidaturas e métricas reais.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 4 implementada no código — autenticação, empresas, candidaturas, métricas reais e Kanban interativo.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -26,6 +26,10 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - CRUD completo de empresas com busca e bloqueio de exclusão quando há candidaturas
 - CRUD completo de candidaturas com detalhes, busca, filtros, ordenação e paginação
 - Histórico automático e append-only de mudanças de status
+- Kanban responsivo com as 11 etapas oficiais, contadores e estados vazios
+- Drag-and-drop por ponteiro e teclado, com alternativa acessível por select
+- Mudança otimista de status com rollback em falhas e proteção contra conflitos entre abas
+- Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
 - Schema versionado com sete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
@@ -176,6 +180,29 @@ As leituras acontecem em Server Components por meio de serviços em `features/*/
 
 A migration `20260814224241_implement_stage_3_companies_applications.sql` adiciona o trigger `applications_record_status_change`. Um evento é inserido em `application_history` somente quando `old.status IS DISTINCT FROM new.status`. A tabela permanece legível pelo proprietário via RLS, mas inserts, updates e deletes diretos foram revogados dos clientes autenticados.
 
+## Etapa 4: Kanban e pipeline
+
+- `/dashboard/kanban` mantém a página como Server Component para autenticação e leitura inicial; somente o board interativo é Client Component.
+- As 11 colunas usam `APPLICATION_STATUSES` e `APPLICATION_STATUS_LABELS`, a mesma fonte central dos formulários e detalhes.
+- Os cards exibem vaga, empresa, modalidade, contratação e, quando disponíveis, localização, salário e data da candidatura.
+- O board usa scroll horizontal contido, com colunas de largura estável em desktop, tablet e mobile.
+- Busca por vaga ou empresa e filtros de modalidade, contrato e empresa funcionam juntos e são refletidos na URL.
+- O link `+ Adicionar` reutiliza o formulário existente e apenas pré-seleciona o status da coluna.
+
+### Drag-and-drop e acessibilidade
+
+O projeto usa `@dnd-kit/react` 0.5.0, versão compatível com React 19 e com sensores de ponteiro e teclado. O card possui um puxador dedicado, evitando conflito com o link para detalhes. Cada card também oferece um select “Mover para”, portanto arrastar nunca é a única forma de alterar o status.
+
+### Persistência, histórico e rollback
+
+Kanban e detalhes chamam a mesma Server Action `changeApplicationStatus`. Ela valida a sessão e os status no servidor e atualiza somente a coluna `status`, sempre com `user_id` e o status anterior esperado no filtro. O trigger PostgreSQL cria o histórico na mesma transação da atualização. Drops na coluna atual são ignorados e não chegam ao banco.
+
+A interface move o card imediatamente. Se a mutation falhar, o snapshot anterior do card é restaurado e uma mensagem é exibida. Se outra aba já tiver alterado a candidatura, a comparação com o status anterior impede sobrescrita silenciosa e solicita uma atualização dos dados.
+
+### Estratégia de carregamento
+
+Uma única query traz até 300 candidaturas, ordenadas por `updated_at DESC`, com somente os campos necessários para os cards e o relacionamento mínimo da empresa. Não há uma query por coluna nem carregamento de descrição, observações ou histórico. Acima desse limite, o board informa que está exibindo as 300 candidaturas atualizadas mais recentemente; paginação incremental pode ser avaliada quando houver volume real que justifique a complexidade.
+
 ### Migration incremental
 
 Além do histórico, a migration da Etapa 3:
@@ -250,6 +277,7 @@ Os testes unitários cobrem:
 - URLs opcionais, enums e regras salariais;
 - normalização segura dos filtros e preservação na paginação;
 - labels e formatação crítica de candidaturas.
+- agrupamento, busca, filtros, alteração sem efeito no mesmo status e rollback do Kanban.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -258,9 +286,9 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 1:** bootstrap, arquitetura e UI base
 - [x] **Etapa 2:** migrations, RLS e autenticação SSR
 - [x] **Etapa 3:** CRUD de empresas e candidaturas
-- [ ] **Etapa 4:** Kanban interativo e gerenciamento avançado do pipeline
-- [ ] **Etapa 5:** documentos, histórico e analytics
-- [ ] **Etapa 6:** suíte E2E, observabilidade e deploy final
+- [x] **Etapa 4:** Kanban interativo e pipeline de candidaturas
+- [ ] **Etapa 5:** entrevistas, contatos e timeline completa da candidatura
+- [ ] **Etapa 6:** documentos, analytics, suíte E2E, observabilidade e deploy final
 
 ## Licença
 

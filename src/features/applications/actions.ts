@@ -13,11 +13,14 @@ import {
   updateApplicationRecord,
   updateApplicationStatusRecord,
 } from "@/features/applications/services/application-service";
+import type { ApplicationStatus } from "@/types/database";
 
 export type ApplicationActionResult = {
   success: boolean;
   message: string;
   redirectTo?: string;
+  changed?: boolean;
+  currentStatus?: ApplicationStatus;
 };
 
 const INVALID_APPLICATION = "Revise os dados da candidatura e tente novamente.";
@@ -38,6 +41,7 @@ export async function createApplication(
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/candidaturas");
+  revalidatePath("/dashboard/kanban");
   return {
     success: true,
     message: "Candidatura criada com sucesso.",
@@ -70,6 +74,7 @@ export async function updateApplication(
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/candidaturas");
+  revalidatePath("/dashboard/kanban");
   revalidatePath(`/dashboard/candidaturas/${applicationId}`);
   return {
     success: true,
@@ -88,18 +93,58 @@ export async function changeApplicationStatus(
   const parsed = statusUpdateSchema.safeParse(input);
   if (!parsed.success) return { success: false, message: "Status inválido." };
 
-  const { error } = await updateApplicationStatusRecord(
+  if (parsed.data.previousStatus === parsed.data.status) {
+    return {
+      success: true,
+      changed: false,
+      currentStatus: parsed.data.status,
+      message: "A candidatura já está nesse status.",
+    };
+  }
+
+  const result = await updateApplicationStatusRecord(
     user.id,
     parsed.data.applicationId,
+    parsed.data.previousStatus,
     parsed.data.status,
   );
-  if (error)
+  if (result.outcome === "error") {
     return { success: false, message: "Não foi possível alterar o status." };
+  }
+  if (result.outcome === "not_found") {
+    return {
+      success: false,
+      message: "Candidatura não encontrada ou não autorizada.",
+    };
+  }
+  if (result.outcome === "conflict") {
+    return {
+      success: false,
+      currentStatus: result.status,
+      message:
+        "Esta candidatura foi alterada em outra aba. Atualize a página e tente novamente.",
+    };
+  }
+
+  if (result.outcome === "unchanged") {
+    return {
+      success: true,
+      changed: false,
+      currentStatus: result.status,
+      message: "O status já estava atualizado.",
+    };
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/candidaturas");
+  revalidatePath("/dashboard/kanban");
   revalidatePath(`/dashboard/candidaturas/${parsed.data.applicationId}`);
-  return { success: true, message: "Status atualizado com sucesso." };
+  return {
+    success: true,
+    changed: true,
+    currentStatus: result.status,
+    message: "Status atualizado com sucesso.",
+  };
 }
 
 export async function deleteApplication(
@@ -119,6 +164,7 @@ export async function deleteApplication(
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/candidaturas");
+  revalidatePath("/dashboard/kanban");
   return {
     success: true,
     message: "Candidatura excluída com sucesso.",

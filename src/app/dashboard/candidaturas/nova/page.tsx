@@ -4,11 +4,25 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { ApplicationForm } from "@/features/applications/components/application-form";
+import { APPLICATION_STATUSES } from "@/features/applications/constants";
 import { getCompanyOptions } from "@/features/companies/services/company-service";
+import type { ApplicationStatus } from "@/types/database";
 
-export default async function NewApplicationPage() {
-  const user = await getCurrentUser();
+export default async function NewApplicationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const [user, { status }] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+  ]);
   const companies = await getCompanyOptions(user!.id);
+  const initialStatus = APPLICATION_STATUSES.includes(
+    status as ApplicationStatus,
+  )
+    ? (status as ApplicationStatus)
+    : "saved";
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
@@ -47,7 +61,7 @@ export default async function NewApplicationPage() {
           </Link>
         </div>
       ) : (
-        <ApplicationForm companies={companies} />
+        <ApplicationForm companies={companies} initialStatus={initialStatus} />
       )}
     </main>
   );

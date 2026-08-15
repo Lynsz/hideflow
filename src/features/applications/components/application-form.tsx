@@ -33,11 +33,13 @@ import {
   type ApplicationFormValues,
 } from "@/features/applications/schemas/application-schema";
 import type { CompanyOption } from "@/features/companies/types/company";
+import type { ApplicationStatus } from "@/types/database";
 
 type ApplicationFormProps = {
   companies: CompanyOption[];
   applicationId?: string;
   defaultValues?: ApplicationFormValues;
+  initialStatus?: ApplicationStatus;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -52,6 +54,7 @@ export function ApplicationForm({
   companies,
   applicationId,
   defaultValues,
+  initialStatus = "saved",
 }: ApplicationFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState("");
@@ -73,7 +76,7 @@ export function ApplicationForm({
       currency: "BRL",
       appliedAt: "",
       source: "",
-      status: "saved",
+      status: initialStatus,
       description: "",
       notes: "",
     },

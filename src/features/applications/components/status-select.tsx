@@ -29,20 +29,31 @@ export function StatusSelect({
     setStatus(nextStatus);
     setIsPending(true);
     setFeedback("");
-    const result = await changeApplicationStatus({
-      applicationId,
-      status: nextStatus,
-    });
-    setIsPending(false);
 
-    if (!result.success) {
-      setStatus(previousStatus);
+    try {
+      const result = await changeApplicationStatus({
+        applicationId,
+        previousStatus,
+        status: nextStatus,
+      });
+
+      if (!result.success) {
+        setStatus(previousStatus);
+        setFeedback(result.message);
+        if (result.currentStatus) router.refresh();
+        return;
+      }
+
       setFeedback(result.message);
-      return;
+      router.refresh();
+    } catch {
+      setStatus(previousStatus);
+      setFeedback(
+        "A conexão falhou. O status anterior foi restaurado na tela.",
+      );
+    } finally {
+      setIsPending(false);
     }
-
-    setFeedback(result.message);
-    router.refresh();
   };
 
   return (

@@ -72,6 +72,7 @@ export const applicationSchema = z
 
 export const statusUpdateSchema = z.object({
   applicationId: z.uuid(),
+  previousStatus: z.enum(APPLICATION_STATUSES),
   status: z.enum(APPLICATION_STATUSES),
 });
 

@@ -31,3 +31,31 @@ export type PaginatedApplications = {
   totalPages: number;
   page: number;
 };
+
+export type KanbanApplication = Pick<
+  Application,
+  | "id"
+  | "job_title"
+  | "location"
+  | "work_mode"
+  | "employment_type"
+  | "salary_min"
+  | "salary_max"
+  | "currency"
+  | "applied_at"
+  | "status"
+  | "updated_at"
+> & {
+  company: CompanyOption;
+};
+
+export type KanbanFilters = Pick<
+  ApplicationFilters,
+  "query" | "workMode" | "employmentType" | "companyId"
+>;
+
+export type KanbanApplicationsResult = {
+  items: KanbanApplication[];
+  total: number;
+  isLimited: boolean;
+};
