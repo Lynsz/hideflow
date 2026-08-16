@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 5 implementada no código — contatos, entrevistas e timeline completa, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 6 implementada no código — documentos privados no Supabase Storage, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -32,9 +32,10 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
 - Timeline agregada e auditável com criação, mudanças de status e eventos de entrevista
+- Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
-- Schema versionado com sete tabelas, RLS, índices e constraints
+- Schema versionado com nove tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -145,7 +146,7 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 | `application_contacts` | Associação muitos-para-muitos entre candidaturas e contatos |
 | `application_history`  | Histórico de mudanças de status                             |
 | `interview_events`     | Eventos append-only da evolução das entrevistas             |
-| `documents`            | Metadados de documentos; Storage será implementado depois   |
+| `documents`            | Metadados dos arquivos privados de cada candidatura         |
 
 Todas as chaves são UUID. FKs compostas com `user_id` impedem que registros de um usuário sejam relacionados aos de outro usuário. Exclusões de usuário propagam por `ON DELETE CASCADE`; exclusões de candidaturas também removem seus registros dependentes. Empresas com candidaturas não podem ser removidas antes de desvincular ou tratar essas candidaturas.
 
@@ -246,6 +247,31 @@ A migration `20260815224928_implement_stage_5_contacts_interviews_timeline.sql` 
 
 `scheduled_at` continua como `TIMESTAMPTZ`. O `datetime-local` é convertido no navegador para ISO 8601 antes da Server Action; datas armazenadas são exibidas por um Client Component com `Intl.DateTimeFormat("pt-BR")`, usando o timezone local do dispositivo. Nenhum horário formatado é persistido.
 
+## Etapa 6: documentos e Supabase Storage
+
+A tela de detalhes da candidatura reúne o envio e o gerenciamento dos seus documentos. São aceitos PDF e DOCX de até 10 MiB, com tipo controlado, nome de exibição opcional e preservação separada do nome original. A validação ocorre novamente no servidor e verifica extensão, MIME, tamanho e assinatura básica do conteúdo antes do upload.
+
+Os objetos ficam no bucket privado `application-documents`, no caminho gerado exclusivamente pelo servidor:
+
+```text
+{user_id}/{application_id}/{uuid}-{nome-sanitizado}.{extensão}
+```
+
+O navegador nunca envia um caminho de Storage como autoridade. Visualizações e downloads partem do `document_id`; a Server Action consulta os metadados com o `user_id` da sessão e só então cria uma URL assinada válida por 60 segundos. URLs assinadas não são persistidas. A substituição é intencionalmente explícita: exclua o arquivo atual e envie outro, sem `upsert` ou sobrescrita silenciosa.
+
+### Políticas e consistência
+
+- O bucket é privado e limita os mesmos MIME types e tamanho também na camada Storage.
+- Policies de `storage.objects` exigem usuário autenticado, `owner_id` igual à sessão e a primeira pasta igual ao `auth.uid()` em `SELECT`, `INSERT`, `UPDATE` e `DELETE`.
+- A tabela `documents` mantém RLS e FK composta de ownership com `applications`; clientes autenticados só podem atualizar a coluna `name`.
+- Falha ao inserir os metadados após o upload aciona a remoção compensatória do objeto.
+- A exclusão remove o objeto antes dos metadados. A exclusão da candidatura também tenta remover todos os objetos antes do cascade relacional e interrompe a operação se o Storage falhar.
+- Storage e PostgreSQL não compartilham uma transação atômica; qualquer falha na etapa compensatória é devolvida explicitamente em vez de ser ignorada.
+
+A migration da etapa é `20260816161935_implement_stage_6_private_application_documents.sql`. O bucket também está declarado em `supabase/config.toml` para a stack local. Nenhuma variável de ambiente ou chave privilegiada adicional é necessária: o servidor usa a sessão do usuário e a chave pública configurada para aplicar RLS.
+
+Documentos não entram na timeline nesta etapa. A timeline atual agrega eventos auditáveis de fontes especializadas; criar uma tabela de eventos exclusiva para arquivos adicionaria outra fonte específica sem um modelo geral de auditoria.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -315,6 +341,9 @@ Os testes unitários cobrem:
 - agrupamento, busca, filtros, alteração sem efeito no mesmo status e rollback do Kanban.
 - schemas de contato e entrevista, incluindo emails, URLs, tipos, resultados e datas.
 - agregação e ordenação da timeline, inclusive timestamps iguais e fontes ausentes.
+- validação de tipo, MIME, extensão, tamanho e assinatura básica de PDF/DOCX;
+- geração de paths exclusivos e sanitizados sem confiar em caminhos do navegador;
+- formatação dos tamanhos exibidos na interface.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -325,7 +354,8 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 3:** CRUD de empresas e candidaturas
 - [x] **Etapa 4:** Kanban interativo e pipeline de candidaturas
 - [x] **Etapa 5:** entrevistas, contatos e timeline completa da candidatura
-- [ ] **Etapa 6:** documentos, Supabase Storage e gerenciamento de currículos e arquivos da candidatura
+- [x] **Etapa 6:** documentos, Supabase Storage e gerenciamento de currículos e arquivos da candidatura
+- [ ] **Etapa 7:** Analytics avançado + métricas + gráficos do processo seletivo
 
 ## Licença
 

@@ -1,5 +1,6 @@
 import type { CompanyOption } from "@/features/companies/types/company";
 import type { Contact } from "@/features/contacts/types/contact";
+import type { DocumentListItem } from "@/features/documents/types/document";
 import type {
   Interview,
   InterviewEvent,
@@ -25,6 +26,7 @@ export type ApplicationDetail = ApplicationWithCompany & {
     }
   >;
   interviewEvents: InterviewEvent[];
+  documents: DocumentListItem[];
 };
 
 export type ApplicationSort = "recent" | "oldest" | "company" | "job";

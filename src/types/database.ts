@@ -43,6 +43,14 @@ export type InterviewResult =
 export type InterviewEventType =
   "created" | Exclude<InterviewResult, "scheduled">;
 
+export type DocumentType =
+  | "resume"
+  | "cover_letter"
+  | "technical_challenge"
+  | "portfolio"
+  | "certificate"
+  | "other";
+
 type Timestamp = string;
 
 export type Database = {
@@ -347,21 +355,37 @@ export type Database = {
           user_id: string;
           application_id: string;
           name: string;
+          original_name: string;
           storage_path: string;
-          document_type: string;
+          document_type: DocumentType;
+          mime_type: string;
+          file_size: number;
           created_at: Timestamp;
+          updated_at: Timestamp;
         };
         Insert: {
           id?: string;
           user_id: string;
           application_id: string;
           name: string;
+          original_name: string;
           storage_path: string;
-          document_type: string;
+          document_type: DocumentType;
+          mime_type: string;
+          file_size: number;
           created_at?: Timestamp;
+          updated_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["documents"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "documents_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;

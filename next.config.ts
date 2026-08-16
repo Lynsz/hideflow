@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      // 10 MiB file limit plus multipart metadata overhead.
+      bodySizeLimit: "11mb",
+    },
+  },
   async headers() {
     return [
       {

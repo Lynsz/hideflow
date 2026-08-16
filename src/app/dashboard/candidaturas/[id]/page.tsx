@@ -21,6 +21,7 @@ import { buildApplicationTimeline } from "@/features/applications/services/appli
 import { ApplicationContactManager } from "@/features/contacts/components/application-contact-manager";
 import { getContactsByCompany } from "@/features/contacts/services/contact-service";
 import { StatusBadge } from "@/features/dashboard/components/status-badge";
+import { DocumentManager } from "@/features/documents/components/document-manager";
 import {
   formatInterviewResult,
   formatInterviewType,
@@ -274,6 +275,11 @@ export default async function ApplicationDetailPage({
           </p>
         )}
       </section>
+
+      <DocumentManager
+        applicationId={application.id}
+        documents={application.documents}
+      />
 
       <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
         <h2 className="font-medium">Timeline</h2>

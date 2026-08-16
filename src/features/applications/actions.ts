@@ -13,6 +13,8 @@ import {
   updateApplicationRecord,
   updateApplicationStatusRecord,
 } from "@/features/applications/services/application-service";
+import { getApplicationDocumentPaths } from "@/features/documents/services/document-service";
+import { removeDocumentObjects } from "@/features/documents/services/document-storage-service";
 import type { ApplicationStatus } from "@/types/database";
 
 export type ApplicationActionResult = {
@@ -154,11 +156,31 @@ export async function deleteApplication(
   if (!user)
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
 
+  const documents = await getApplicationDocumentPaths(user.id, applicationId);
+  if (documents.error) {
+    return {
+      success: false,
+      message: "Não foi possível verificar os documentos da candidatura.",
+    };
+  }
+  const storageRemoval = await removeDocumentObjects(
+    documents.data.map((document) => document.storage_path),
+  );
+  if (storageRemoval.error) {
+    return {
+      success: false,
+      message:
+        "Não foi possível remover os documentos; a candidatura foi preservada.",
+    };
+  }
+
   const { data, error } = await deleteApplicationRecord(user.id, applicationId);
   if (error || !data) {
     return {
       success: false,
-      message: "Candidatura não encontrada ou não autorizada.",
+      message: documents.data.length
+        ? "Os arquivos foram removidos, mas não foi possível excluir a candidatura."
+        : "Candidatura não encontrada ou não autorizada.",
     };
   }
 
