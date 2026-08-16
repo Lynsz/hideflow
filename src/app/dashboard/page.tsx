@@ -12,16 +12,19 @@ import Link from "next/link";
 
 import { buttonStyles } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LocalDateTime } from "@/components/ui/local-date-time";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { formatDate } from "@/features/applications/services/application-formatters";
 import { StatusBadge } from "@/features/dashboard/components/status-badge";
 import { getDashboardData } from "@/features/dashboard/services/get-dashboard-data";
 import type { MetricKey } from "@/features/dashboard/types/dashboard";
+import { formatInterviewType } from "@/features/interviews/constants";
 
 const metricIcons = {
   applications: BriefcaseBusiness,
   active: Send,
   interviews: CalendarClock,
+  upcoming_interviews: CalendarClock,
   offers: FileCheck2,
   hired: Trophy,
   rejected: CircleX,
@@ -81,6 +84,28 @@ export default async function DashboardPage() {
           );
         })}
       </section>
+
+      {data.nextInterview ? (
+        <section className="border-border bg-surface mt-4 flex flex-col justify-between gap-4 rounded-xl border p-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-muted-foreground text-xs">Próxima entrevista</p>
+            <h2 className="mt-1.5 text-sm font-medium">
+              {data.nextInterview.application.job_title} ·{" "}
+              {data.nextInterview.application.company.name}
+            </h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              {formatInterviewType(data.nextInterview.type)} ·{" "}
+              <LocalDateTime value={data.nextInterview.scheduled_at} />
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/candidaturas/${data.nextInterview.application_id}`}
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
+          >
+            Abrir candidatura
+          </Link>
+        </section>
+      ) : null}
 
       <section className="border-border bg-surface mt-4 overflow-hidden rounded-xl border">
         <div className="border-border flex items-center justify-between border-b px-5 py-4">

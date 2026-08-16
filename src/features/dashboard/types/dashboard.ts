@@ -1,7 +1,13 @@
 import type { ApplicationWithCompany } from "@/features/applications/types/application";
 
 export type MetricKey =
-  "applications" | "active" | "interviews" | "offers" | "hired" | "rejected";
+  | "applications"
+  | "active"
+  | "interviews"
+  | "upcoming_interviews"
+  | "offers"
+  | "hired"
+  | "rejected";
 
 export type DashboardMetric = {
   key: MetricKey;
@@ -13,4 +19,11 @@ export type DashboardMetric = {
 export type DashboardData = {
   metrics: DashboardMetric[];
   recentApplications: ApplicationWithCompany[];
+  nextInterview: {
+    id: string;
+    scheduled_at: string;
+    type: import("@/types/database").InterviewType;
+    application_id: string;
+    application: { job_title: string; company: { id: string; name: string } };
+  } | null;
 };

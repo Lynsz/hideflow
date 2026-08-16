@@ -16,6 +16,33 @@ export type WorkMode = "remote" | "hybrid" | "onsite";
 export type EmploymentType =
   "clt" | "pj" | "internship" | "freelance" | "temporary" | "other";
 
+export type ContactType =
+  | "recruiter"
+  | "tech_recruiter"
+  | "hr"
+  | "hiring_manager"
+  | "technical_interviewer"
+  | "developer"
+  | "manager"
+  | "other";
+
+export type InterviewType =
+  | "hr"
+  | "technical"
+  | "behavioral"
+  | "culture"
+  | "manager"
+  | "pair_programming"
+  | "technical_challenge"
+  | "final"
+  | "other";
+
+export type InterviewResult =
+  "scheduled" | "completed" | "passed" | "failed" | "cancelled" | "rescheduled";
+
+export type InterviewEventType =
+  "created" | Exclude<InterviewResult, "scheduled">;
+
 type Timestamp = string;
 
 export type Database = {
@@ -131,7 +158,7 @@ export type Database = {
           email: string | null;
           phone: string | null;
           linkedin_url: string | null;
-          contact_type: string | null;
+          contact_type: ContactType | null;
           notes: string | null;
           created_at: Timestamp;
           updated_at: Timestamp;
@@ -145,25 +172,67 @@ export type Database = {
           email?: string | null;
           phone?: string | null;
           linkedin_url?: string | null;
-          contact_type?: string | null;
+          contact_type?: ContactType | null;
           notes?: string | null;
           created_at?: Timestamp;
           updated_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["contacts"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_owner_fkey";
+            columns: ["company_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      application_contacts: {
+        Row: {
+          application_id: string;
+          contact_id: string;
+          user_id: string;
+          created_at: Timestamp;
+        };
+        Insert: {
+          application_id: string;
+          contact_id: string;
+          user_id: string;
+          created_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["application_contacts"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "application_contacts_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "application_contacts_contact_owner_fkey";
+            columns: ["contact_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       interviews: {
         Row: {
           id: string;
           user_id: string;
           application_id: string;
-          type: string;
+          type: InterviewType;
           scheduled_at: Timestamp;
+          contact_id: string | null;
           interviewer_name: string | null;
           meeting_url: string | null;
           notes: string | null;
-          result: string | null;
+          result: InterviewResult;
           created_at: Timestamp;
           updated_at: Timestamp;
         };
@@ -171,17 +240,76 @@ export type Database = {
           id?: string;
           user_id: string;
           application_id: string;
-          type: string;
+          type: InterviewType;
           scheduled_at: Timestamp;
+          contact_id?: string | null;
           interviewer_name?: string | null;
           meeting_url?: string | null;
           notes?: string | null;
-          result?: string | null;
+          result?: InterviewResult;
           created_at?: Timestamp;
           updated_at?: Timestamp;
         };
         Update: Partial<Database["public"]["Tables"]["interviews"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "interviews_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "interviews_contact_owner_fkey";
+            columns: ["contact_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      interview_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          application_id: string;
+          interview_id: string | null;
+          event_type: InterviewEventType;
+          interview_type: InterviewType;
+          result: InterviewResult | null;
+          scheduled_at: Timestamp;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          application_id: string;
+          interview_id?: string | null;
+          event_type: InterviewEventType;
+          interview_type: InterviewType;
+          result?: InterviewResult | null;
+          scheduled_at: Timestamp;
+          created_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["interview_events"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "interview_events_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "interview_events_interview_owner_fkey";
+            columns: ["interview_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       application_history: {
         Row: {

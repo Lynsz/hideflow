@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 4 implementada no código — autenticação, empresas, candidaturas, métricas reais e Kanban interativo.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 5 implementada no código — contatos, entrevistas e timeline completa, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -29,6 +29,9 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Kanban responsivo com as 11 etapas oficiais, contadores e estados vazios
 - Drag-and-drop por ponteiro e teclado, com alternativa acessível por select
 - Mudança otimista de status com rollback em falhas e proteção contra conflitos entre abas
+- CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
+- CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
+- Timeline agregada e auditável com criação, mudanças de status e eventos de entrevista
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
 - Schema versionado com sete tabelas, RLS, índices e constraints
@@ -132,17 +135,21 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 
 ## Arquitetura do banco
 
-| Tabela                | Responsabilidade                                          |
-| --------------------- | --------------------------------------------------------- |
-| `profiles`            | Dados públicos mínimos do usuário autenticado             |
-| `companies`           | Empresas pertencentes ao usuário                          |
-| `applications`        | Candidaturas e estágio do processo                        |
-| `contacts`            | Contatos vinculados a empresas                            |
-| `interviews`          | Entrevistas vinculadas a candidaturas                     |
-| `application_history` | Histórico de mudanças de status                           |
-| `documents`           | Metadados de documentos; Storage será implementado depois |
+| Tabela                 | Responsabilidade                                            |
+| ---------------------- | ----------------------------------------------------------- |
+| `profiles`             | Dados públicos mínimos do usuário autenticado               |
+| `companies`            | Empresas pertencentes ao usuário                            |
+| `applications`         | Candidaturas e estágio do processo                          |
+| `contacts`             | Contatos vinculados a empresas                              |
+| `interviews`           | Entrevistas vinculadas a candidaturas                       |
+| `application_contacts` | Associação muitos-para-muitos entre candidaturas e contatos |
+| `application_history`  | Histórico de mudanças de status                             |
+| `interview_events`     | Eventos append-only da evolução das entrevistas             |
+| `documents`            | Metadados de documentos; Storage será implementado depois   |
 
 Todas as chaves são UUID. FKs compostas com `user_id` impedem que registros de um usuário sejam relacionados aos de outro usuário. Exclusões de usuário propagam por `ON DELETE CASCADE`; exclusões de candidaturas também removem seus registros dependentes. Empresas com candidaturas não podem ser removidas antes de desvincular ou tratar essas candidaturas.
+
+Contatos permanecem ligados à empresa e podem participar de várias candidaturas por `application_contacts`, evitando duplicação. `interviews.contact_id` é opcional: quando o contato é excluído, somente o vínculo fica nulo e a entrevista permanece. Triggers validam que contato, candidatura e empresa pertencem ao mesmo usuário e à mesma empresa.
 
 ### Status de candidatura
 
@@ -212,9 +219,36 @@ Além do histórico, a migration da Etapa 3:
 - adiciona índices compostos/condicionais para ownership, empresa, criação, modalidade, contrato e histórico;
 - preserva todas as policies RLS criadas na Etapa 2.
 
+## Etapa 5: contatos, entrevistas e timeline
+
+- `/dashboard/contatos` oferece busca server-side por nome, cargo, email ou empresa e filtros por empresa e tipo.
+- Criação e edição reutilizam um formulário React Hook Form + Zod; detalhes expõem email, telefone e LinkedIn com links seguros.
+- A edição da empresa lista seus contatos e permite iniciar um cadastro já com a empresa selecionada.
+- A candidatura permite associar ou remover contatos da mesma empresa sem duplicar o registro original.
+- `/dashboard/entrevistas` separa próximas entrevistas das anteriores e permite criar, editar, excluir e registrar resultados.
+- O entrevistador pode ser um contato da empresa da candidatura ou um nome manual. O banco reforça essa consistência além da validação da interface.
+- O dashboard mantém “Candidaturas em entrevista” como métrica do pipeline e adiciona “Entrevistas próximas” baseada nos registros reais da agenda.
+
+### Timeline e auditoria
+
+A timeline usa fontes especializadas em vez de uma tabela genérica com JSON: deriva a criação de `applications.created_at`, lê mudanças de status em `application_history` e eventos imutáveis de entrevistas em `interview_events`. O trigger `interviews_record_event` registra criação, reagendamento e transições de resultado sem duplicar o reagendamento quando data e resultado mudam juntos. A UI agrega e ordena tudo do evento mais recente para o mais antigo, com desempate determinístico.
+
+### Tipos, constraints e índices
+
+A migration `20260815224928_implement_stage_5_contacts_interviews_timeline.sql` adiciona:
+
+- tipos controlados de contato, entrevista e resultado por `CHECK`;
+- FKs compostas de ownership para `application_contacts`, contatos das entrevistas e eventos;
+- índices para filtros de tipo, agenda/resultado, contatos de entrevistas e leitura cronológica da timeline;
+- RLS por proprietário nas novas tabelas, eventos somente para leitura e privilégios explícitos para a Data API.
+
+### Datas e timezone
+
+`scheduled_at` continua como `TIMESTAMPTZ`. O `datetime-local` é convertido no navegador para ISO 8601 antes da Server Action; datas armazenadas são exibidas por um Client Component com `Intl.DateTimeFormat("pt-BR")`, usando o timezone local do dispositivo. Nenhum horário formatado é persistido.
+
 ## Row Level Security
 
-RLS nasce habilitado nas sete tabelas.
+RLS nasce habilitado em todas as tabelas de dados do usuário.
 
 - `profiles`: somente `SELECT` e `UPDATE` do próprio `id`.
 - Demais tabelas: `SELECT`, `INSERT`, `UPDATE` e `DELETE` somente quando `user_id = (select auth.uid())`.
@@ -222,6 +256,7 @@ RLS nasce habilitado nas sete tabelas.
 - Inserts não aceitam `user_id` de terceiros.
 - FKs compostas reforçam a propriedade também nos relacionamentos.
 - `anon` não recebe privilégios sobre as tabelas privadas.
+- `application_history` e `interview_events` são append-only para clientes; somente triggers internos registram eventos.
 - A função privilegiada de criação de profile fica no schema não exposto `private`, usa `search_path = ''` e não pode ser executada diretamente pelos clientes.
 
 Metadados editáveis do usuário são usados apenas para o nome de exibição, nunca para autorização.
@@ -278,6 +313,8 @@ Os testes unitários cobrem:
 - normalização segura dos filtros e preservação na paginação;
 - labels e formatação crítica de candidaturas.
 - agrupamento, busca, filtros, alteração sem efeito no mesmo status e rollback do Kanban.
+- schemas de contato e entrevista, incluindo emails, URLs, tipos, resultados e datas.
+- agregação e ordenação da timeline, inclusive timestamps iguais e fontes ausentes.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -287,8 +324,8 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 2:** migrations, RLS e autenticação SSR
 - [x] **Etapa 3:** CRUD de empresas e candidaturas
 - [x] **Etapa 4:** Kanban interativo e pipeline de candidaturas
-- [ ] **Etapa 5:** entrevistas, contatos e timeline completa da candidatura
-- [ ] **Etapa 6:** documentos, analytics, suíte E2E, observabilidade e deploy final
+- [x] **Etapa 5:** entrevistas, contatos e timeline completa da candidatura
+- [ ] **Etapa 6:** documentos, Supabase Storage e gerenciamento de currículos e arquivos da candidatura
 
 ## Licença
 

@@ -167,13 +167,51 @@ export async function getApplicationById(
     .eq("application_id", applicationId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  const contactsPromise = supabase
+    .from("application_contacts")
+    .select(
+      "contact:contacts!application_contacts_contact_owner_fkey(id, name, role, contact_type, email)",
+    )
+    .eq("application_id", applicationId)
+    .eq("user_id", userId);
+  const interviewsPromise = supabase
+    .from("interviews")
+    .select(
+      "id, user_id, application_id, contact_id, type, scheduled_at, interviewer_name, meeting_url, notes, result, created_at, updated_at, contact:contacts!interviews_contact_owner_fkey(id, name, company_id)",
+    )
+    .eq("application_id", applicationId)
+    .eq("user_id", userId)
+    .order("scheduled_at", { ascending: true });
+  const eventsPromise = supabase
+    .from("interview_events")
+    .select(
+      "id, user_id, application_id, interview_id, event_type, interview_type, result, scheduled_at, created_at",
+    )
+    .eq("application_id", applicationId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
 
-  const [applicationResult, historyResult] = await Promise.all([
+  const [
+    applicationResult,
+    historyResult,
+    contactsResult,
+    interviewsResult,
+    eventsResult,
+  ] = await Promise.all([
     applicationPromise,
     historyPromise,
+    contactsPromise,
+    interviewsPromise,
+    eventsPromise,
   ]);
 
-  if (applicationResult.error || historyResult.error) {
+  if (
+    applicationResult.error ||
+    historyResult.error ||
+    contactsResult.error ||
+    interviewsResult.error ||
+    eventsResult.error
+  ) {
     throw new Error("Não foi possível carregar a candidatura.");
   }
   if (!applicationResult.data) return null;
@@ -181,6 +219,9 @@ export async function getApplicationById(
   return {
     ...applicationResult.data,
     history: historyResult.data,
+    contacts: contactsResult.data.map((item) => item.contact),
+    interviews: interviewsResult.data,
+    interviewEvents: eventsResult.data,
   };
 }
 

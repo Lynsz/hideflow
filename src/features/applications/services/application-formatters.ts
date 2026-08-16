@@ -13,20 +13,10 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "UTC",
 });
 
-const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "America/Sao_Paulo",
-});
-
 export function formatDate(value: string | null) {
   return value
     ? dateFormatter.format(new Date(`${value}T00:00:00Z`))
     : "Não informada";
-}
-
-export function formatDateTime(value: string) {
-  return dateTimeFormatter.format(new Date(value));
 }
 
 export function formatSalary(

@@ -1,4 +1,9 @@
 import type { CompanyOption } from "@/features/companies/types/company";
+import type { Contact } from "@/features/contacts/types/contact";
+import type {
+  Interview,
+  InterviewEvent,
+} from "@/features/interviews/types/interview";
 import type { ApplicationStatus, Database } from "@/types/database";
 
 export type Application = Database["public"]["Tables"]["applications"]["Row"];
@@ -11,6 +16,15 @@ export type ApplicationWithCompany = Application & {
 
 export type ApplicationDetail = ApplicationWithCompany & {
   history: ApplicationHistory[];
+  contacts: Array<
+    Pick<Contact, "id" | "name" | "role" | "contact_type" | "email">
+  >;
+  interviews: Array<
+    Interview & {
+      contact: { id: string; name: string; company_id: string } | null;
+    }
+  >;
+  interviewEvents: InterviewEvent[];
 };
 
 export type ApplicationSort = "recent" | "oldest" | "company" | "job";

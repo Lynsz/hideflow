@@ -1,22 +1,30 @@
-import { ArrowLeft, ArrowRight, ExternalLink, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { buttonStyles } from "@/components/ui/button";
 import { FormFeedback } from "@/components/ui/form-feedback";
+import { LocalDateTime } from "@/components/ui/local-date-time";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { DeleteApplicationButton } from "@/features/applications/components/application-actions";
+import { ApplicationTimeline } from "@/features/applications/components/application-timeline";
 import { StatusSelect } from "@/features/applications/components/status-select";
 import {
   formatDate,
-  formatDateTime,
   formatEmploymentType,
   formatSalary,
   formatStatus,
   formatWorkMode,
 } from "@/features/applications/services/application-formatters";
 import { getApplicationById } from "@/features/applications/services/application-service";
+import { buildApplicationTimeline } from "@/features/applications/services/application-timeline";
+import { ApplicationContactManager } from "@/features/contacts/components/application-contact-manager";
+import { getContactsByCompany } from "@/features/contacts/services/contact-service";
 import { StatusBadge } from "@/features/dashboard/components/status-badge";
+import {
+  formatInterviewResult,
+  formatInterviewType,
+} from "@/features/interviews/constants";
 
 type ApplicationDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -54,6 +62,19 @@ export default async function ApplicationDetailPage({
   ]);
   const application = await getApplicationById(user!.id, id);
   if (!application) notFound();
+  const companyContacts = await getContactsByCompany(
+    user!.id,
+    application.company_id,
+  );
+  const linkedIds = new Set(application.contacts.map((contact) => contact.id));
+  const availableContacts = companyContacts.filter(
+    (contact) => !linkedIds.has(contact.id),
+  );
+  const timeline = buildApplicationTimeline(
+    application.created_at,
+    application.history,
+    application.interviewEvents,
+  );
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
@@ -141,10 +162,10 @@ export default async function ApplicationDetailPage({
               )}
             </DetailItem>
             <DetailItem label="Criada em">
-              {formatDateTime(application.created_at)}
+              <LocalDateTime value={application.created_at} />
             </DetailItem>
             <DetailItem label="Atualizada em">
-              {formatDateTime(application.updated_at)}
+              <LocalDateTime value={application.updated_at} />
             </DetailItem>
           </dl>
 
@@ -178,40 +199,89 @@ export default async function ApplicationDetailPage({
           </section>
 
           <section className="border-border bg-surface rounded-xl border p-5">
-            <h2 className="font-medium">Histórico</h2>
-            {application.history.length === 0 ? (
-              <p className="text-muted-foreground mt-4 text-sm">
-                Nenhuma mudança de status registrada.
-              </p>
-            ) : (
-              <ol className="mt-5 space-y-5">
-                {application.history.map((event) => (
-                  <li key={event.id} className="relative pl-5">
-                    <span className="bg-accent absolute top-1.5 left-0 size-2 rounded-full" />
-                    <div className="flex flex-wrap items-center gap-1.5 text-sm">
-                      <span>
-                        {event.from_status
-                          ? formatStatus(event.from_status)
-                          : "Início"}
-                      </span>
-                      <ArrowRight
-                        className="text-muted-foreground size-3.5"
-                        aria-hidden="true"
-                      />
-                      <span className="font-medium">
-                        {formatStatus(event.to_status)}
-                      </span>
-                    </div>
-                    <time className="text-muted-foreground mt-1 block text-xs">
-                      {formatDateTime(event.created_at)}
-                    </time>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-medium">Contatos</h2>
+              <Link
+                className="text-accent text-xs hover:underline"
+                href={`/dashboard/contatos/novo?company=${application.company_id}`}
+              >
+                Novo contato
+              </Link>
+            </div>
+            <div className="mt-4">
+              <ApplicationContactManager
+                applicationId={application.id}
+                linked={application.contacts}
+                available={availableContacts}
+              />
+            </div>
           </section>
         </div>
       </div>
+
+      <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-medium">Entrevistas</h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Agenda e resultados deste processo.
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/entrevistas/nova?application=${application.id}`}
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
+          >
+            <Plus className="size-4" />
+            Agendar entrevista
+          </Link>
+        </div>
+        {application.interviews.length ? (
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {application.interviews.map((interview) => (
+              <article
+                key={interview.id}
+                className="bg-muted/40 rounded-lg p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium">
+                    {formatInterviewType(interview.type)}
+                  </p>
+                  <span className="bg-muted rounded-full px-2 py-1 text-[10px]">
+                    {formatInterviewResult(interview.result)}
+                  </span>
+                </div>
+                <LocalDateTime
+                  value={interview.scheduled_at}
+                  className="mt-3 block text-sm"
+                />
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {interview.contact?.name ??
+                    interview.interviewer_name ??
+                    "Entrevistador não informado"}
+                </p>
+                <Link
+                  className="text-accent mt-3 inline-block text-xs hover:underline"
+                  href={`/dashboard/entrevistas/${interview.id}/editar`}
+                >
+                  Editar entrevista
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground mt-5 text-sm">
+            Nenhuma entrevista agendada.
+          </p>
+        )}
+      </section>
+
+      <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
+        <h2 className="font-medium">Timeline</h2>
+        <p className="text-muted-foreground mt-1 text-xs">
+          Eventos mais recentes primeiro.
+        </p>
+        <ApplicationTimeline events={timeline} />
+      </section>
     </main>
   );
 }

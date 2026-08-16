@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Settings,
   SquareKanban,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -39,8 +40,8 @@ const navigationItems: NavigationItem[] = [
     label: "Entrevistas",
     href: "/dashboard/entrevistas",
     icon: CalendarClock,
-    disabled: true,
   },
+  { label: "Contatos", href: "/dashboard/contatos", icon: Users },
   {
     label: "Analytics",
     href: "/dashboard/analytics",
