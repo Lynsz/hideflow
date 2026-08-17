@@ -24,6 +24,17 @@ describe("applicationSchema", () => {
     expect(applicationSchema.safeParse(validApplication).success).toBe(true);
   });
 
+  it("aceita apenas moedas disponíveis nas preferências", () => {
+    expect(
+      applicationSchema.safeParse({ ...validApplication, currency: "USD" })
+        .success,
+    ).toBe(true);
+    expect(
+      applicationSchema.safeParse({ ...validApplication, currency: "BTC" })
+        .success,
+    ).toBe(false);
+  });
+
   it("rejeita salário negativo", () => {
     expect(
       applicationSchema.safeParse({ ...validApplication, salaryMin: "-1" })

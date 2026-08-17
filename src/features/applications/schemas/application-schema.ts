@@ -5,6 +5,7 @@ import {
   EMPLOYMENT_TYPES,
   WORK_MODES,
 } from "@/features/applications/constants";
+import { SUPPORTED_CURRENCIES } from "@/features/settings/constants";
 import { isHttpUrl } from "@/lib/validation/url";
 
 const optionalUrl = z
@@ -37,10 +38,7 @@ export const applicationSchema = z
     employmentType: z.enum(EMPLOYMENT_TYPES).or(z.literal("")),
     salaryMin: optionalSalary,
     salaryMax: optionalSalary,
-    currency: z
-      .string()
-      .trim()
-      .regex(/^[A-Z]{3}$/, "Informe uma moeda com três letras."),
+    currency: z.enum(SUPPORTED_CURRENCIES, "Selecione uma moeda válida."),
     appliedAt: z
       .string()
       .trim()

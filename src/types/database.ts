@@ -51,6 +51,10 @@ export type DocumentType =
   | "certificate"
   | "other";
 
+export type SupportedCurrency = "BRL" | "USD" | "EUR";
+
+export type AnalyticsPeriod = "3m" | "6m" | "12m" | "all";
+
 type Timestamp = string;
 
 export type Database = {
@@ -61,6 +65,8 @@ export type Database = {
           id: string;
           full_name: string;
           avatar_url: string | null;
+          default_currency: SupportedCurrency;
+          analytics_period: AnalyticsPeriod;
           created_at: Timestamp;
           updated_at: Timestamp;
         };
@@ -68,12 +74,16 @@ export type Database = {
           id: string;
           full_name?: string;
           avatar_url?: string | null;
+          default_currency?: SupportedCurrency;
+          analytics_period?: AnalyticsPeriod;
           created_at?: Timestamp;
           updated_at?: Timestamp;
         };
         Update: {
           full_name?: string;
           avatar_url?: string | null;
+          default_currency?: SupportedCurrency;
+          analytics_period?: AnalyticsPeriod;
           updated_at?: Timestamp;
         };
         Relationships: [];

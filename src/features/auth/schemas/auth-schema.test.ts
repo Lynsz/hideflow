@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { loginSchema, signUpSchema } from "@/features/auth/schemas/auth-schema";
+import {
+  loginSchema,
+  newPasswordSchema,
+  passwordRecoveryRequestSchema,
+  signUpSchema,
+} from "@/features/auth/schemas/auth-schema";
 
 describe("loginSchema", () => {
   it("normaliza o e-mail e aceita credenciais válidas", () => {
@@ -54,5 +59,28 @@ describe("signUpSchema", () => {
     if (!result.success) {
       expect(result.error.issues[0]?.path).toEqual(["passwordConfirmation"]);
     }
+  });
+});
+
+describe("password recovery schemas", () => {
+  it("normaliza o e-mail do pedido de recuperação", () => {
+    expect(
+      passwordRecoveryRequestSchema.parse({ email: "  MARIA@EXAMPLE.COM " }),
+    ).toEqual({ email: "maria@example.com" });
+  });
+
+  it("exige senha forte e confirmação idêntica", () => {
+    expect(
+      newPasswordSchema.safeParse({
+        password: "novaSenha123",
+        passwordConfirmation: "novaSenha123",
+      }).success,
+    ).toBe(true);
+    expect(
+      newPasswordSchema.safeParse({
+        password: "novaSenha123",
+        passwordConfirmation: "diferente123",
+      }).success,
+    ).toBe(false);
   });
 });

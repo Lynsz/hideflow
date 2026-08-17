@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,6 +20,7 @@ type AuthFormProps = {
   mode: "login" | "signup";
   redirectTo?: string;
   initialError?: string;
+  initialSuccess?: string;
 };
 
 type Feedback = {
@@ -82,10 +84,15 @@ function SubmitButton({
 function LoginForm({
   redirectTo,
   initialError,
-}: Pick<AuthFormProps, "redirectTo" | "initialError">) {
+  initialSuccess,
+}: Pick<AuthFormProps, "redirectTo" | "initialError" | "initialSuccess">) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<Feedback | null>(
-    initialError ? { kind: "error", message: initialError } : null,
+    initialError
+      ? { kind: "error", message: initialError }
+      : initialSuccess
+        ? { kind: "success", message: initialSuccess }
+        : null,
   );
   const {
     register,
@@ -142,6 +149,15 @@ function LoginForm({
         />
         <FieldError id="password-error" message={errors.password?.message} />
       </label>
+
+      <div className="-mt-1 text-right">
+        <Link
+          href="/recuperar-senha"
+          className="text-muted-foreground hover:text-accent text-xs transition"
+        >
+          Esqueci minha senha
+        </Link>
+      </div>
 
       <SubmitButton isSubmitting={isSubmitting} label="Entrar" />
       <FormFeedback feedback={feedback} />
@@ -273,9 +289,18 @@ function SignUpForm() {
   );
 }
 
-export function AuthForm({ mode, redirectTo, initialError }: AuthFormProps) {
+export function AuthForm({
+  mode,
+  redirectTo,
+  initialError,
+  initialSuccess,
+}: AuthFormProps) {
   return mode === "login" ? (
-    <LoginForm redirectTo={redirectTo} initialError={initialError} />
+    <LoginForm
+      redirectTo={redirectTo}
+      initialError={initialError}
+      initialSuccess={initialSuccess}
+    />
   ) : (
     <SignUpForm />
   );

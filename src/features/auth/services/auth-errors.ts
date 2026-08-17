@@ -9,6 +9,9 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Muitas tentativas foram realizadas. Aguarde alguns minutos.",
   over_request_rate_limit:
     "Muitas tentativas foram realizadas. Aguarde alguns minutos.",
+  reauthentication_needed:
+    "Por segurança, entre novamente antes de alterar sua senha.",
+  same_password: "A nova senha precisa ser diferente da senha atual.",
 };
 
 type ErrorLike = {

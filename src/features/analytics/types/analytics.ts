@@ -1,6 +1,9 @@
-import type { ApplicationStatus } from "@/types/database";
+import type {
+  AnalyticsPeriod as DatabaseAnalyticsPeriod,
+  ApplicationStatus,
+} from "@/types/database";
 
-export type AnalyticsPeriod = "3m" | "6m" | "12m" | "all";
+export type AnalyticsPeriod = DatabaseAnalyticsPeriod;
 
 export type AnalyticsFilters = {
   period: AnalyticsPeriod;

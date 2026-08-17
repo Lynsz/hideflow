@@ -13,6 +13,8 @@ import { MonthlyApplicationsChart } from "@/features/analytics/components/monthl
 import { SalaryAverages } from "@/features/analytics/components/salary-averages";
 import { parseAnalyticsFilters } from "@/features/analytics/services/analytics-filters";
 import { getAnalyticsData } from "@/features/analytics/services/analytics-service";
+import { getCurrentUser } from "@/features/auth/services/get-current-user";
+import { getUserSettings } from "@/features/settings/services/settings-service";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -23,7 +25,12 @@ type AnalyticsPageProps = {
 export default async function AnalyticsPage({
   searchParams,
 }: AnalyticsPageProps) {
-  const filters = parseAnalyticsFilters(await searchParams);
+  const [user, rawFilters] = await Promise.all([
+    getCurrentUser(),
+    searchParams,
+  ]);
+  const settings = await getUserSettings(user!.id);
+  const filters = parseAnalyticsFilters(rawFilters, settings.analyticsPeriod);
   const data = await getAnalyticsData(filters);
 
   return (

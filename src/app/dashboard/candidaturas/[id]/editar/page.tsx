@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { ApplicationForm } from "@/features/applications/components/application-form";
 import { getApplicationById } from "@/features/applications/services/application-service";
 import { getCompanyOptions } from "@/features/companies/services/company-service";
+import { SUPPORTED_CURRENCIES } from "@/features/settings/constants";
 
 export default async function EditApplicationPage({
   params,
@@ -49,7 +50,11 @@ export default async function EditApplicationPage({
           employmentType: application.employment_type ?? "",
           salaryMin: application.salary_min?.toString() ?? "",
           salaryMax: application.salary_max?.toString() ?? "",
-          currency: application.currency,
+          currency: SUPPORTED_CURRENCIES.includes(
+            application.currency as (typeof SUPPORTED_CURRENCIES)[number],
+          )
+            ? (application.currency as (typeof SUPPORTED_CURRENCIES)[number])
+            : "BRL",
           appliedAt: application.applied_at ?? "",
           source: application.source ?? "",
           status: application.status,

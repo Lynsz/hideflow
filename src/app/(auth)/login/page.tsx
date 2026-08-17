@@ -18,6 +18,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     params.confirmation === "error"
       ? "Não foi possível confirmar seu e-mail. Solicite um novo link."
       : undefined;
+  const initialSuccess =
+    params.feedback === "password-reset" ||
+    params.feedback === "password-changed"
+      ? "Senha atualizada com sucesso. Entre com suas novas credenciais."
+      : undefined;
 
   return (
     <AuthShell
@@ -33,6 +38,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           typeof params.next === "string" ? params.next : undefined,
         )}
         initialError={initialError}
+        initialSuccess={initialSuccess}
       />
     </AuthShell>
   );

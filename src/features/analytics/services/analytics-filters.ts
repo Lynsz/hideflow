@@ -16,14 +16,17 @@ function isUuid(value: string) {
   );
 }
 
-export function parseAnalyticsFilters(raw: RawFilters): AnalyticsFilters {
+export function parseAnalyticsFilters(
+  raw: RawFilters,
+  defaultPeriod: AnalyticsPeriod = "12m",
+): AnalyticsFilters {
   const period = first(raw.period);
   const companyId = first(raw.company);
 
   return {
     period: ANALYTICS_PERIODS.includes(period as AnalyticsPeriod)
       ? (period as AnalyticsPeriod)
-      : "12m",
+      : defaultPeriod,
     companyId: isUuid(companyId) ? companyId : "",
   };
 }

@@ -33,13 +33,18 @@ import {
   type ApplicationFormValues,
 } from "@/features/applications/schemas/application-schema";
 import type { CompanyOption } from "@/features/companies/types/company";
-import type { ApplicationStatus } from "@/types/database";
+import {
+  CURRENCY_LABELS,
+  SUPPORTED_CURRENCIES,
+} from "@/features/settings/constants";
+import type { ApplicationStatus, SupportedCurrency } from "@/types/database";
 
 type ApplicationFormProps = {
   companies: CompanyOption[];
   applicationId?: string;
   defaultValues?: ApplicationFormValues;
   initialStatus?: ApplicationStatus;
+  defaultCurrency?: SupportedCurrency;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -55,6 +60,7 @@ export function ApplicationForm({
   applicationId,
   defaultValues,
   initialStatus = "saved",
+  defaultCurrency = "BRL",
 }: ApplicationFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState("");
@@ -73,7 +79,7 @@ export function ApplicationForm({
       employmentType: "",
       salaryMin: "",
       salaryMax: "",
-      currency: "BRL",
+      currency: defaultCurrency,
       appliedAt: "",
       source: "",
       status: initialStatus,
@@ -234,7 +240,11 @@ export function ApplicationForm({
             disabled={isSubmitting}
             {...register("currency")}
           >
-            <option value="BRL">BRL — Real brasileiro</option>
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {CURRENCY_LABELS[currency]}
+              </option>
+            ))}
           </select>
           <FieldError message={errors.currency?.message} />
         </label>

@@ -10,6 +10,13 @@ describe("analytics filters", () => {
     expect(parseAnalyticsFilters({})).toEqual({ period: "12m", companyId: "" });
   });
 
+  it("usa a preferência informada quando a URL não define período", () => {
+    expect(parseAnalyticsFilters({}, "6m")).toEqual({
+      period: "6m",
+      companyId: "",
+    });
+  });
+
   it("aceita período e empresa válidos", () => {
     expect(
       parseAnalyticsFilters({

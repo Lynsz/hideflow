@@ -39,5 +39,34 @@ export const signUpSchema = z
     path: ["passwordConfirmation"],
   });
 
+export const passwordRecoveryRequestSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Informe um e-mail válido.")),
+});
+
+export const newPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "A senha deve ter pelo menos 8 caracteres.")
+      .max(72, "A senha deve ter no máximo 72 caracteres.")
+      .regex(
+        /^(?=.*[A-Za-z])(?=.*\d).+$/,
+        "Use pelo menos uma letra e um número.",
+      ),
+    passwordConfirmation: z.string(),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "As senhas precisam ser iguais.",
+    path: ["passwordConfirmation"],
+  });
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
+export type PasswordRecoveryRequestValues = z.infer<
+  typeof passwordRecoveryRequestSchema
+>;
+export type NewPasswordValues = z.infer<typeof newPasswordSchema>;

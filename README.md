@@ -133,13 +133,14 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 5. O trigger `private.handle_new_user()` cria o registro em `profiles`.
 6. O `proxy.ts` renova tokens e sincroniza cookies antes das rotas protegidas.
 7. O layout do dashboard valida claims novamente no servidor e carrega o profile.
-8. O logout encerra a sessão local e redireciona para `/login`.
+8. A recuperação de senha usa PKCE: o callback valida o código, cria uma sessão temporária e libera `/redefinir-senha` por dez minutos.
+9. O logout comum encerra somente a sessão local; alterações de senha revogam as sessões da conta e exigem um novo login.
 
 ## Arquitetura do banco
 
 | Tabela                 | Responsabilidade                                            |
 | ---------------------- | ----------------------------------------------------------- |
-| `profiles`             | Dados públicos mínimos do usuário autenticado               |
+| `profiles`             | Perfil e preferências privadas do usuário autenticado       |
 | `companies`            | Empresas pertencentes ao usuário                            |
 | `applications`         | Candidaturas e estágio do processo                          |
 | `contacts`             | Contatos vinculados a empresas                              |
@@ -307,6 +308,20 @@ Não há dependência de gráficos adicionada: os visuais simples são renderiza
 
 As consultas selecionam somente os campos analíticos necessários de `applications`, `application_history` e `interviews`, sempre com `user_id` da sessão e RLS. As três fontes são carregadas em paralelo e paginadas deterministicamente em lotes de 1.000 linhas para evitar truncamento silencioso da Data API. Apenas agregados seguros chegam aos componentes visuais. Não foi necessária uma nova migration: a modelagem das etapas anteriores já contém as fontes de verdade usadas pelos cálculos.
 
+## Etapa 8: conta, preferências e recuperação de senha
+
+`/dashboard/configuracoes` centraliza nome de exibição, moeda padrão, período inicial de Analytics e alteração autenticada de senha. A moeda escolhida passa a ser o valor inicial de novas candidaturas; o período preferido é usado somente quando a URL de Analytics não define um filtro explícito. BRL, USD e EUR são os domínios aceitos para manter validação idêntica na interface, no servidor e no banco.
+
+A migration `20260817001900_add_account_preferences.sql` adiciona as preferências ao `profiles`, com `NOT NULL`, defaults e constraints. O privilégio amplo de `UPDATE` é revogado e concedido novamente apenas para `full_name`, `default_currency` e `analytics_period`; identidade, avatar e timestamps não podem ser enviados como alterações pelo cliente. A policy existente continua limitando leitura e escrita ao próprio `auth.uid()`.
+
+### Segurança da senha
+
+- `/recuperar-senha` responde da mesma forma para e-mails existentes ou não, evitando enumeração de contas.
+- O link retorna ao callback SSR e usa o fluxo PKCE oficial do Supabase; códigos são de uso único e precisam ser trocados no mesmo navegador que iniciou o pedido.
+- `/redefinir-senha` exige sessão válida e o marcador HTTP-only, `SameSite=Strict` e temporário criado exclusivamente após um callback de recuperação.
+- A troca de senha dentro das configurações exige a senha atual. Após uma troca ou redefinição bem-sucedida, as sessões são revogadas globalmente e o usuário volta ao login.
+- O domínio do projeto e `/auth/callback` precisam permanecer autorizados em **Authentication > URL Configuration** no Supabase. Para produção, configure também SMTP próprio se o plano/provedor exigir entrega confiável dos e-mails.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -383,6 +398,9 @@ Os testes unitários cobrem:
 - taxas e funil com denominadores explícitos e progressão monotônica;
 - série mensal com meses sem registros, agrupamento de fontes e salários por moeda;
 - cobertura das informações e tempo médio de resposta com amostra mensurável.
+- validação de perfil, preferências e alteração de senha;
+- normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
+- aplicação do período preferido quando Analytics não recebe filtro na URL.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -395,7 +413,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 5:** entrevistas, contatos e timeline completa da candidatura
 - [x] **Etapa 6:** documentos, Supabase Storage e gerenciamento de currículos e arquivos da candidatura
 - [x] **Etapa 7:** Analytics avançado + métricas + gráficos do processo seletivo
-- [ ] **Etapa 8:** configurações da conta, preferências e recuperação de senha
+- [x] **Etapa 8:** configurações da conta, preferências e recuperação de senha
 
 ## Licença
 

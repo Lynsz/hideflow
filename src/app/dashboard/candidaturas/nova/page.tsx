@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { ApplicationForm } from "@/features/applications/components/application-form";
 import { APPLICATION_STATUSES } from "@/features/applications/constants";
 import { getCompanyOptions } from "@/features/companies/services/company-service";
+import { getUserSettings } from "@/features/settings/services/settings-service";
 import type { ApplicationStatus } from "@/types/database";
 
 export default async function NewApplicationPage({
@@ -17,7 +18,10 @@ export default async function NewApplicationPage({
     getCurrentUser(),
     searchParams,
   ]);
-  const companies = await getCompanyOptions(user!.id);
+  const [companies, settings] = await Promise.all([
+    getCompanyOptions(user!.id),
+    getUserSettings(user!.id),
+  ]);
   const initialStatus = APPLICATION_STATUSES.includes(
     status as ApplicationStatus,
   )
@@ -61,7 +65,11 @@ export default async function NewApplicationPage({
           </Link>
         </div>
       ) : (
-        <ApplicationForm companies={companies} initialStatus={initialStatus} />
+        <ApplicationForm
+          companies={companies}
+          initialStatus={initialStatus}
+          defaultCurrency={settings.defaultCurrency}
+        />
       )}
     </main>
   );

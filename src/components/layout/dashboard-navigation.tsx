@@ -51,7 +51,6 @@ const navigationItems: NavigationItem[] = [
     label: "Configurações",
     href: "/dashboard/configuracoes",
     icon: Settings,
-    disabled: true,
   },
 ];
 
