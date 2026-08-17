@@ -1,5 +1,6 @@
 import {
   ArrowUpRight,
+  BellRing,
   BriefcaseBusiness,
   CalendarClock,
   CircleX,
@@ -19,12 +20,14 @@ import { StatusBadge } from "@/features/dashboard/components/status-badge";
 import { getDashboardData } from "@/features/dashboard/services/get-dashboard-data";
 import type { MetricKey } from "@/features/dashboard/types/dashboard";
 import { formatInterviewType } from "@/features/interviews/constants";
+import { getReminderState } from "@/features/reminders/services/reminder-filters";
 
 const metricIcons = {
   applications: BriefcaseBusiness,
   active: Send,
   interviews: CalendarClock,
   upcoming_interviews: CalendarClock,
+  pending_reminders: BellRing,
   offers: FileCheck2,
   hired: Trophy,
   rejected: CircleX,
@@ -103,6 +106,38 @@ export default async function DashboardPage() {
             className={buttonStyles({ variant: "secondary", size: "sm" })}
           >
             Abrir candidatura
+          </Link>
+        </section>
+      ) : null}
+
+      {data.nextReminder ? (
+        <section className="border-border bg-surface mt-4 flex flex-col justify-between gap-4 rounded-xl border p-5 sm:flex-row sm:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-muted-foreground text-xs">Próximo lembrete</p>
+              {getReminderState(
+                { due_at: data.nextReminder.due_at, completed_at: null },
+                data.now,
+              ) === "overdue" ? (
+                <span className="rounded-full bg-red-400/10 px-2 py-1 text-[10px] text-red-300">
+                  Atrasado
+                </span>
+              ) : null}
+            </div>
+            <h2 className="mt-1.5 text-sm font-medium">
+              {data.nextReminder.title}
+            </h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              {data.nextReminder.application.job_title} ·{" "}
+              {data.nextReminder.application.company.name} ·{" "}
+              <LocalDateTime value={data.nextReminder.due_at} />
+            </p>
+          </div>
+          <Link
+            href="/dashboard/lembretes"
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
+          >
+            Ver lembretes
           </Link>
         </section>
       ) : null}

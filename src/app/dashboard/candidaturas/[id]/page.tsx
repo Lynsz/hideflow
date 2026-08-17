@@ -26,6 +26,7 @@ import {
   formatInterviewResult,
   formatInterviewType,
 } from "@/features/interviews/constants";
+import { ReminderCard } from "@/features/reminders/components/reminder-card";
 
 type ApplicationDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -76,6 +77,7 @@ export default async function ApplicationDetailPage({
     application.history,
     application.interviewEvents,
   );
+  const now = new Date().toISOString();
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
@@ -280,6 +282,47 @@ export default async function ApplicationDetailPage({
         applicationId={application.id}
         documents={application.documents}
       />
+
+      <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-medium">Lembretes</h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Follow-ups e próximos passos deste processo.
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/lembretes/novo?application=${application.id}`}
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            Novo lembrete
+          </Link>
+        </div>
+        {application.reminders.length ? (
+          <div className="mt-5 space-y-3">
+            {application.reminders.map((reminder) => (
+              <ReminderCard
+                key={reminder.id}
+                now={now}
+                stayOnPage
+                reminder={{
+                  ...reminder,
+                  application: {
+                    id: application.id,
+                    job_title: application.job_title,
+                    company: application.company,
+                  },
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground mt-5 text-sm">
+            Nenhum lembrete criado para esta candidatura.
+          </p>
+        )}
+      </section>
 
       <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
         <h2 className="font-medium">Timeline</h2>

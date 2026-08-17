@@ -397,6 +397,40 @@ export type Database = {
           },
         ];
       };
+      reminders: {
+        Row: {
+          id: string;
+          user_id: string;
+          application_id: string;
+          title: string;
+          notes: string | null;
+          due_at: Timestamp;
+          completed_at: Timestamp | null;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          application_id: string;
+          title: string;
+          notes?: string | null;
+          due_at: Timestamp;
+          completed_at?: Timestamp | null;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["reminders"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "reminders_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 7 implementada no código — Analytics avançado com métricas e gráficos do processo seletivo, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 10 implementada no código — lembretes e follow-ups privados vinculados às candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -36,7 +36,9 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
 - Analytics com período/empresa, KPIs de conversão, funil, tendências, fontes, salários e cobertura dos dados
-- Schema versionado com nove tabelas, RLS, índices e constraints
+- Lembretes com prazo, filtros de situação, conclusão, reabertura e vínculo seguro com candidaturas
+- Resumo de pendências e próximo follow-up no dashboard
+- Schema versionado com dez tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -152,6 +154,7 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 | `application_history`  | Histórico de mudanças de status                             |
 | `interview_events`     | Eventos append-only da evolução das entrevistas             |
 | `documents`            | Metadados dos arquivos privados de cada candidatura         |
+| `reminders`            | Follow-ups e tarefas com prazo vinculados às candidaturas   |
 
 Todas as chaves são UUID. FKs compostas com `user_id` impedem que registros de um usuário sejam relacionados aos de outro usuário. Exclusões de usuário propagam por `ON DELETE CASCADE`; exclusões de candidaturas também removem seus registros dependentes. Empresas com candidaturas não podem ser removidas antes de desvincular ou tratar essas candidaturas.
 
@@ -348,6 +351,23 @@ Os valores de Supabase usados nesse workflow são placeholders públicos e serve
 
 Nenhum deploy é disparado pelo workflow e nenhum token da Vercel é necessário no repositório. A promoção para produção permanece uma ação explícita depois da migration e da validação do preview.
 
+## Etapa 10: lembretes e follow-ups
+
+`/dashboard/lembretes` reúne os próximos passos de cada processo seletivo. Cada lembrete pertence obrigatoriamente a uma candidatura, possui título, observações opcionais, prazo em `TIMESTAMPTZ` e um marcador de conclusão. A listagem separa próximos, atrasados, concluídos e todos os registros sem persistir um status derivado que poderia ficar desatualizado.
+
+O usuário pode criar, editar, concluir, reabrir e excluir lembretes. A tela de detalhes da candidatura expõe os mesmos registros e permite iniciar um lembrete com a candidatura já selecionada. O dashboard mostra a quantidade de pendências, quantas estão fora do prazo e o primeiro lembrete ainda não concluído.
+
+### Segurança e modelagem
+
+- `user_id` sempre vem da sessão no servidor e nunca do formulário.
+- A FK composta `(application_id, user_id)` impede vínculo com candidatura de outra conta e remove os lembretes em cascata quando a candidatura é excluída.
+- RLS restringe `SELECT`, `INSERT`, `UPDATE` e `DELETE` ao proprietário; usuários anônimos não recebem privilégios.
+- O cliente autenticado só pode atualizar `title`, `notes`, `due_at` e `completed_at`, portanto não consegue trocar ownership ou mover o lembrete para outra candidatura.
+- Um índice parcial cobre a fila de pendências por usuário e prazo; outro índice atende a leitura por candidatura e o cascade da FK.
+- O estado “atrasado” é calculado comparando o prazo com o horário corrente. O timezone local é usado somente para entrada e exibição; o banco armazena instantes absolutos.
+
+Esta etapa implementa lembretes dentro do HireFlow. Não há envio automático de e-mail, push, execução agendada ou integração com calendários externos.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -431,6 +451,8 @@ A suíte automatizada cobre:
 - validação de perfil, preferências e alteração de senha;
 - normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
+- schema de lembretes, limites de texto e datas ISO;
+- normalização dos filtros de lembretes e classificação determinística entre próximo, atrasado e concluído;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -447,6 +469,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 7:** Analytics avançado + métricas + gráficos do processo seletivo
 - [x] **Etapa 8:** configurações da conta, preferências e recuperação de senha
 - [x] **Etapa 9:** qualidade, E2E, CI e preparação para deploy
+- [x] **Etapa 10:** lembretes e follow-ups vinculados às candidaturas
 
 ## Licença
 

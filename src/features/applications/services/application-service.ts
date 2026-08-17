@@ -198,6 +198,13 @@ export async function getApplicationById(
     .eq("application_id", applicationId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  const remindersPromise = supabase
+    .from("reminders")
+    .select("id, application_id, title, notes, due_at, completed_at")
+    .eq("application_id", applicationId)
+    .eq("user_id", userId)
+    .order("completed_at", { ascending: true, nullsFirst: true })
+    .order("due_at", { ascending: true });
 
   const [
     applicationResult,
@@ -206,6 +213,7 @@ export async function getApplicationById(
     interviewsResult,
     eventsResult,
     documentsResult,
+    remindersResult,
   ] = await Promise.all([
     applicationPromise,
     historyPromise,
@@ -213,6 +221,7 @@ export async function getApplicationById(
     interviewsPromise,
     eventsPromise,
     documentsPromise,
+    remindersPromise,
   ]);
 
   if (
@@ -221,7 +230,8 @@ export async function getApplicationById(
     contactsResult.error ||
     interviewsResult.error ||
     eventsResult.error ||
-    documentsResult.error
+    documentsResult.error ||
+    remindersResult.error
   ) {
     throw new Error("Não foi possível carregar a candidatura.");
   }
@@ -234,6 +244,7 @@ export async function getApplicationById(
     interviews: interviewsResult.data,
     interviewEvents: eventsResult.data,
     documents: documentsResult.data,
+    reminders: remindersResult.data,
   };
 }
 

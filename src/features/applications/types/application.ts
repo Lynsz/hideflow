@@ -5,6 +5,7 @@ import type {
   Interview,
   InterviewEvent,
 } from "@/features/interviews/types/interview";
+import type { Reminder } from "@/features/reminders/types/reminder";
 import type { ApplicationStatus, Database } from "@/types/database";
 
 export type Application = Database["public"]["Tables"]["applications"]["Row"];
@@ -27,6 +28,12 @@ export type ApplicationDetail = ApplicationWithCompany & {
   >;
   interviewEvents: InterviewEvent[];
   documents: DocumentListItem[];
+  reminders: Array<
+    Pick<
+      Reminder,
+      "id" | "application_id" | "title" | "notes" | "due_at" | "completed_at"
+    >
+  >;
 };
 
 export type ApplicationSort = "recent" | "oldest" | "company" | "job";

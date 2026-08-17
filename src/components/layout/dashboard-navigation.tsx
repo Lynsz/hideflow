@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  BellRing,
   Building2,
   CalendarClock,
   Columns3,
@@ -40,6 +41,11 @@ const navigationItems: NavigationItem[] = [
     label: "Entrevistas",
     href: "/dashboard/entrevistas",
     icon: CalendarClock,
+  },
+  {
+    label: "Lembretes",
+    href: "/dashboard/lembretes",
+    icon: BellRing,
   },
   { label: "Contatos", href: "/dashboard/contatos", icon: Users },
   {

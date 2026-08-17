@@ -35,7 +35,13 @@ const RECENT_SELECT = `
 export const getDashboardData = cache(async (): Promise<DashboardData> => {
   const user = await getCurrentUser();
   if (!user)
-    return { metrics: [], recentApplications: [], nextInterview: null };
+    return {
+      metrics: [],
+      recentApplications: [],
+      nextInterview: null,
+      nextReminder: null,
+      now: new Date().toISOString(),
+    };
 
   const supabase = await createClient();
   const now = new Date().toISOString();
@@ -55,6 +61,9 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
     rejected,
     recent,
     nextInterview,
+    pendingReminders,
+    overdueReminders,
+    nextReminder,
   ] = await Promise.all([
     count(),
     count().in("status", [...ACTIVE_APPLICATION_STATUSES]),
@@ -85,6 +94,27 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
       .order("scheduled_at")
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("reminders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("completed_at", null),
+    supabase
+      .from("reminders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("completed_at", null)
+      .lt("due_at", now),
+    supabase
+      .from("reminders")
+      .select(
+        "id, due_at, title, application_id, application:applications!reminders_application_owner_fkey(job_title, company:companies!applications_company_owner_fkey(id, name))",
+      )
+      .eq("user_id", user.id)
+      .is("completed_at", null)
+      .order("due_at")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const results = [
@@ -97,6 +127,9 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
     rejected,
     recent,
     nextInterview,
+    pendingReminders,
+    overdueReminders,
+    nextReminder,
   ];
   if (results.some((result) => result.error)) {
     throw new Error("Não foi possível carregar o dashboard.");
@@ -129,6 +162,12 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
         supportingText: "Eventos agendados",
       },
       {
+        key: "pending_reminders",
+        label: "Lembretes pendentes",
+        value: pendingReminders.count ?? 0,
+        supportingText: `${overdueReminders.count ?? 0} fora do prazo`,
+      },
+      {
         key: "offers",
         label: "Propostas",
         value: offers.count ?? 0,
@@ -149,5 +188,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
     ],
     recentApplications: recent.data ?? [],
     nextInterview: nextInterview.data,
+    nextReminder: nextReminder.data,
+    now,
   };
 });
