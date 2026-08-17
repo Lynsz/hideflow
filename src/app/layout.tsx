@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
+
+import { resolveSiteUrl } from "@/lib/site-url";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://hireflow.vercel.app"),
+  metadataBase: resolveSiteUrl({
+    SITE_URL: process.env.SITE_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  }),
   title: {
     default: "HireFlow — Sua busca por emprego, organizada",
     template: "%s | HireFlow",

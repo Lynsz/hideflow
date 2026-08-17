@@ -72,9 +72,12 @@ Preencha o `.env.local` com dados públicos do diálogo **Connect** do projeto:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SITE_URL=
 ```
 
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` deve receber uma chave permitida para clientes: a chave `anon` legada ou a publishable key atual. O nome foi mantido conforme a especificação do projeto. Nunca utilize `service_role` ou uma secret key em variáveis `NEXT_PUBLIC_*`.
+
+`SITE_URL` é server-only e opcional localmente. Em produção, defina a URL canônica HTTPS do projeto. Quando ela não existe, o app usa `VERCEL_PROJECT_PRODUCTION_URL` fornecida pela Vercel e mantém `http://localhost:3000` apenas como fallback local.
 
 ### Aplicar migrations em um projeto remoto
 
@@ -322,6 +325,29 @@ A migration `20260817001900_add_account_preferences.sql` adiciona as preferênci
 - A troca de senha dentro das configurações exige a senha atual. Após uma troca ou redefinição bem-sucedida, as sessões são revogadas globalmente e o usuário volta ao login.
 - O domínio do projeto e `/auth/callback` precisam permanecer autorizados em **Authentication > URL Configuration** no Supabase. Para produção, configure também SMTP próprio se o plano/provedor exigir entrega confiável dos e-mails.
 
+## Etapa 9: qualidade, E2E, CI e preparação para deploy
+
+O projeto possui smoke tests com Playwright em Chromium para desktop e mobile. A suíte valida a navegação pública, a validação do formulário de recuperação, o redirecionamento de visitantes que tentam acessar o dashboard e o endpoint de liveness. Os testes locais constroem e iniciam a versão de produção automaticamente em `127.0.0.1:3100`; para validar um preview ou produção já publicados, defina `PLAYWRIGHT_TEST_BASE_URL` antes do comando.
+
+`/api/health` retorna apenas `{ "status": "ok", "service": "hireflow" }` com `Cache-Control: no-store`. Ele confirma que a aplicação responde, mas deliberadamente não consulta o Supabase nem expõe configuração, usuários ou detalhes da infraestrutura.
+
+### Integração contínua
+
+O workflow `.github/workflows/ci.yml` roda em pushes para `main` e pull requests com permissões somente de leitura. A sequência usa instalação reproduzível com `npm ci`, valida o contrato do ambiente, executa Prettier, ESLint, TypeScript, Vitest e o build, instala somente o Chromium headless e roda os smoke tests. O relatório do Playwright fica disponível como artefato por 14 dias.
+
+Os valores de Supabase usados nesse workflow são placeholders públicos e servem somente para jornadas sem sessão ou acesso a dados. Eles não apontam para produção e não substituem testes autenticados contra um projeto de desenvolvimento isolado.
+
+### Checklist de deploy
+
+1. Aplique todas as migrations no projeto correto com `npm run db:push` e revise o resultado antes de publicar a aplicação.
+2. Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` separadamente nos ambientes Development, Preview e Production da Vercel, preferindo um projeto Supabase isolado para previews. Defina `SITE_URL` no ambiente de produção; previews podem usar o fallback seguro de `VERCEL_PROJECT_PRODUCTION_URL`. Nunca use uma secret ou `service_role` key.
+3. Execute `npm run env:check` e `npm run validate` antes do envio.
+4. Configure a Site URL e os Redirect URLs do Supabase para o domínio de produção e para os previews autorizados.
+5. Conecte o repositório à Vercel para gerar previews por branch e produção a partir de `main`; o CI valida o commit independentemente do deploy.
+6. Após publicar, valide `https://seu-dominio/api/health` e execute os smoke tests com `PLAYWRIGHT_TEST_BASE_URL` apontando para a URL implantada.
+
+Nenhum deploy é disparado pelo workflow e nenhum token da Vercel é necessário no repositório. A promoção para produção permanece uma ação explícita depois da migration e da validação do preview.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -347,7 +373,11 @@ Metadados editáveis do usuário são usados apenas para o nome de exibição, n
 | `npm run lint`         | Executa ESLint                            |
 | `npm run typecheck`    | Valida TypeScript                         |
 | `npm test`             | Executa os testes com Vitest              |
+| `npm run test:e2e`     | Executa smoke tests desktop/mobile        |
+| `npm run test:e2e:ui`  | Abre a interface local do Playwright      |
 | `npm run format:check` | Verifica formatação                       |
+| `npm run env:check`    | Valida variáveis sem imprimir valores     |
+| `npm run validate`     | Executa qualidade, testes e build         |
 | `npm run db:start`     | Inicia Supabase local                     |
 | `npm run db:reset`     | Recria o banco local aplicando migrations |
 | `npm run db:lint`      | Analisa o banco local                     |
@@ -378,7 +408,7 @@ src/
 
 ## Testes
 
-Os testes unitários cobrem:
+A suíte automatizada cobre:
 
 - normalização e validação dos schemas de login/cadastro;
 - requisitos e confirmação de senha;
@@ -401,6 +431,8 @@ Os testes unitários cobrem:
 - validação de perfil, preferências e alteração de senha;
 - normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
+- smoke tests públicos em Chromium desktop e mobile;
+- redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -414,6 +446,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 6:** documentos, Supabase Storage e gerenciamento de currículos e arquivos da candidatura
 - [x] **Etapa 7:** Analytics avançado + métricas + gráficos do processo seletivo
 - [x] **Etapa 8:** configurações da conta, preferências e recuperação de senha
+- [x] **Etapa 9:** qualidade, E2E, CI e preparação para deploy
 
 ## Licença
 
