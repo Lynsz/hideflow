@@ -34,6 +34,11 @@ export type AnalyticsInterview = {
   created_at: string;
 };
 
+export type AnalyticsTechnologyLink = {
+  application_id: string;
+  technology: { id: string; name: string };
+};
+
 export type AnalyticsMetric = {
   key:
     | "applications"
@@ -61,7 +66,7 @@ export type MonthlyApplicationDatum = {
 };
 
 export type AnalyticsCoverageDatum = {
-  key: "source" | "salary" | "applied_at" | "response_time";
+  key: "source" | "salary" | "applied_at" | "technologies" | "response_time";
   label: string;
   value: number;
   covered: number;
@@ -80,6 +85,7 @@ export type AnalyticsData = {
   funnel: AnalyticsBarDatum[];
   statusBreakdown: AnalyticsBarDatum[];
   sourceBreakdown: AnalyticsBarDatum[];
+  technologyBreakdown: AnalyticsBarDatum[];
   salaryAverages: SalaryAverage[];
   coverage: AnalyticsCoverageDatum[];
   companies: Array<{ id: string; name: string }>;

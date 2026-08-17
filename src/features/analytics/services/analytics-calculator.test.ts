@@ -5,6 +5,7 @@ import type {
   AnalyticsApplication,
   AnalyticsHistory,
   AnalyticsInterview,
+  AnalyticsTechnologyLink,
 } from "@/features/analytics/types/analytics";
 
 const company = { id: "company-1", name: "Acme" };
@@ -64,12 +65,31 @@ const interviews: AnalyticsInterview[] = [
     created_at: "2026-06-05T00:00:00.000Z",
   },
 ];
+const technologies: AnalyticsTechnologyLink[] = [
+  {
+    application_id: "application-1",
+    technology: { id: "technology-react", name: "React" },
+  },
+  {
+    application_id: "application-1",
+    technology: { id: "technology-typescript", name: "TypeScript" },
+  },
+  {
+    application_id: "application-2",
+    technology: { id: "technology-react", name: "React" },
+  },
+  {
+    application_id: "application-3",
+    technology: { id: "technology-postgresql", name: "PostgreSQL" },
+  },
+];
 
 describe("calculateAnalytics", () => {
   const data = calculateAnalytics(
     applications,
     history,
     interviews,
+    technologies,
     { period: "3m", companyId: "" },
     new Date("2026-08-16T12:00:00.000Z"),
   );
@@ -105,11 +125,64 @@ describe("calculateAnalytics", () => {
     ]);
   });
 
+  it("ranqueia tecnologias estruturadas por candidatura", () => {
+    expect(data.technologyBreakdown).toEqual([
+      {
+        key: "technology-react",
+        label: "React",
+        value: 2,
+        percentage: 67,
+      },
+      {
+        key: "technology-postgresql",
+        label: "PostgreSQL",
+        value: 1,
+        percentage: 33,
+      },
+      {
+        key: "technology-typescript",
+        label: "TypeScript",
+        value: 1,
+        percentage: 33,
+      },
+    ]);
+  });
+
+  it("aplica o filtro de empresa também ao ranking de tecnologias", () => {
+    const otherCompany = { id: "company-2", name: "Beta" };
+    const filtered = calculateAnalytics(
+      [
+        applications[0],
+        {
+          ...applications[1],
+          company_id: otherCompany.id,
+          company: otherCompany,
+        },
+      ],
+      [],
+      [],
+      [
+        technologies[0],
+        {
+          application_id: "application-2",
+          technology: { id: "technology-go", name: "Go" },
+        },
+      ],
+      { period: "all", companyId: company.id },
+      new Date("2026-08-16T12:00:00.000Z"),
+    );
+
+    expect(filtered.technologyBreakdown.map((item) => item.label)).toEqual([
+      "React",
+    ]);
+  });
+
   it("expõe cobertura para interpretar métricas incompletas", () => {
     expect(data.coverage.map((item) => [item.key, item.value])).toEqual([
       ["source", 67],
       ["salary", 67],
       ["applied_at", 67],
+      ["technologies", 100],
       ["response_time", 100],
     ]);
   });
@@ -117,6 +190,7 @@ describe("calculateAnalytics", () => {
   it("retorna taxas indisponíveis quando não existem candidaturas enviadas", () => {
     const emptyDenominator = calculateAnalytics(
       [applications[2]],
+      [],
       [],
       [],
       { period: "all", companyId: "" },
@@ -133,6 +207,7 @@ describe("calculateAnalytics", () => {
       [{ ...applications[2], id: "rejected", status: "rejected" }],
       [],
       [],
+      [],
       { period: "all", companyId: "" },
       new Date("2026-08-16T12:00:00.000Z"),
     );
@@ -144,6 +219,7 @@ describe("calculateAnalytics", () => {
   it("faz uma contratação alcançar todos os marcos anteriores", () => {
     const hired = calculateAnalytics(
       [{ ...applications[2], id: "hired", status: "hired" }],
+      [],
       [],
       [],
       { period: "all", companyId: "" },

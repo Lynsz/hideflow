@@ -107,7 +107,16 @@ export default async function AnalyticsPage({
           </div>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <HorizontalBarChart
+              title="Tecnologias mais frequentes"
+              subtitle="Percentual de candidaturas do recorte vinculadas a cada tecnologia; uma candidatura pode ter várias tags."
+              data={data.technologyBreakdown}
+              emptyMessage="Adicione tecnologias às candidaturas para identificar as mais frequentes."
+            />
             <SalaryAverages data={data.salaryAverages} />
+          </div>
+
+          <div className="mt-4">
             <AnalyticsCoverage data={data.coverage} />
           </div>
 
@@ -135,9 +144,9 @@ export default async function AnalyticsPage({
                     evento mensurável.
                   </li>
                   <li>
-                    Tecnologias não são inferidas de descrições livres. Essa
-                    análise exige tags estruturadas para não produzir resultados
-                    enganosos.
+                    Tecnologias vêm somente das tags estruturadas vinculadas às
+                    candidaturas; nenhuma informação é inferida de descrições
+                    livres.
                   </li>
                 </ul>
               </div>

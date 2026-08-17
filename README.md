@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 10 implementada no código — lembretes e follow-ups privados vinculados às candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 11 implementada no código — tecnologias estruturadas por candidatura e ranking no Analytics, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -38,7 +38,9 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Analytics com período/empresa, KPIs de conversão, funil, tendências, fontes, salários e cobertura dos dados
 - Lembretes com prazo, filtros de situação, conclusão, reabertura e vínculo seguro com candidaturas
 - Resumo de pendências e próximo follow-up no dashboard
-- Schema versionado com dez tabelas, RLS, índices e constraints
+- Tecnologias estruturadas, reutilizáveis e normalizadas por usuário
+- Ranking de tecnologias e cobertura das tags no Analytics
+- Schema versionado com doze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -143,18 +145,20 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 
 ## Arquitetura do banco
 
-| Tabela                 | Responsabilidade                                            |
-| ---------------------- | ----------------------------------------------------------- |
-| `profiles`             | Perfil e preferências privadas do usuário autenticado       |
-| `companies`            | Empresas pertencentes ao usuário                            |
-| `applications`         | Candidaturas e estágio do processo                          |
-| `contacts`             | Contatos vinculados a empresas                              |
-| `interviews`           | Entrevistas vinculadas a candidaturas                       |
-| `application_contacts` | Associação muitos-para-muitos entre candidaturas e contatos |
-| `application_history`  | Histórico de mudanças de status                             |
-| `interview_events`     | Eventos append-only da evolução das entrevistas             |
-| `documents`            | Metadados dos arquivos privados de cada candidatura         |
-| `reminders`            | Follow-ups e tarefas com prazo vinculados às candidaturas   |
+| Tabela                     | Responsabilidade                                               |
+| -------------------------- | -------------------------------------------------------------- |
+| `profiles`                 | Perfil e preferências privadas do usuário autenticado          |
+| `companies`                | Empresas pertencentes ao usuário                               |
+| `applications`             | Candidaturas e estágio do processo                             |
+| `contacts`                 | Contatos vinculados a empresas                                 |
+| `interviews`               | Entrevistas vinculadas a candidaturas                          |
+| `application_contacts`     | Associação muitos-para-muitos entre candidaturas e contatos    |
+| `application_history`      | Histórico de mudanças de status                                |
+| `interview_events`         | Eventos append-only da evolução das entrevistas                |
+| `documents`                | Metadados dos arquivos privados de cada candidatura            |
+| `reminders`                | Follow-ups e tarefas com prazo vinculados às candidaturas      |
+| `technologies`             | Catálogo privado e normalizado de tecnologias do usuário       |
+| `application_technologies` | Associação muitos-para-muitos entre candidaturas e tecnologias |
 
 Todas as chaves são UUID. FKs compostas com `user_id` impedem que registros de um usuário sejam relacionados aos de outro usuário. Exclusões de usuário propagam por `ON DELETE CASCADE`; exclusões de candidaturas também removem seus registros dependentes. Empresas com candidaturas não podem ser removidas antes de desvincular ou tratar essas candidaturas.
 
@@ -305,10 +309,11 @@ O funil força uma progressão monotônica: alcançar uma etapa posterior també
 | Funil de avanço      | Quantas candidaturas alcançaram cada marco?         | Barras horizontais ordenadas  |
 | Status atual         | Onde estão as candidaturas hoje?                    | Barras por ordem do pipeline  |
 | Principais fontes    | Quais canais concentram candidaturas identificadas? | Ranking de barras horizontais |
+| Tecnologias          | Quais tecnologias aparecem em mais candidaturas?    | Ranking de barras horizontais |
 | Média salarial       | Qual a referência salarial por moeda?               | Lista de valores exatos       |
 | Cobertura dos dados  | Quão confiáveis são os campos analíticos?           | Barras de completude          |
 
-Não há dependência de gráficos adicionada: os visuais simples são renderizados no servidor com HTML semântico e CSS, possuem valores textuais, tabela acessível para a série mensal e continuam utilizáveis no mobile. Tecnologias não são inferidas de descrições livres; uma análise desse tipo exige tags estruturadas para não criar resultados enganosos.
+Não há dependência de gráficos adicionada: os visuais simples são renderizados no servidor com HTML semântico e CSS, possuem valores textuais, tabela acessível para a série mensal e continuam utilizáveis no mobile. Tecnologias não são inferidas de descrições livres; o ranking usa exclusivamente as tags estruturadas implementadas na Etapa 11.
 
 ### Leitura e performance
 
@@ -367,6 +372,23 @@ O usuário pode criar, editar, concluir, reabrir e excluir lembretes. A tela de 
 - O estado “atrasado” é calculado comparando o prazo com o horário corrente. O timezone local é usado somente para entrada e exibição; o banco armazena instantes absolutos.
 
 Esta etapa implementa lembretes dentro do HireFlow. Não há envio automático de e-mail, push, execução agendada ou integração com calendários externos.
+
+## Etapa 11: tecnologias estruturadas e Analytics
+
+A tela de detalhes da candidatura permite vincular tecnologias como React, TypeScript, PostgreSQL ou AWS. O campo oferece sugestões do catálogo privado do usuário e também aceita uma nova tecnologia. Espaços são normalizados e a unicidade por `(user_id, normalized_name)` impede duplicidades causadas por diferenças de caixa, como `React` e `react`.
+
+O Analytics carrega as associações de forma paginada junto das demais fontes e aplica o mesmo recorte de período e empresa. O ranking mostra até oito tecnologias, contando no máximo uma ocorrência por candidatura graças à PK composta da associação. O percentual usa todas as candidaturas do recorte como denominador; como uma candidatura pode possuir várias tags, os percentuais das tecnologias não precisam somar 100%. A cobertura informa quantas candidaturas possuem ao menos uma tecnologia estruturada.
+
+### Segurança e relacionamentos
+
+- `technologies` e `application_technologies` possuem RLS e privilégios mínimos; `anon` não possui acesso.
+- FKs compostas com `user_id` exigem que candidatura e tecnologia pertençam ao mesmo usuário.
+- `user_id` sempre é derivado da sessão autenticada pelas Server Actions.
+- A associação possui somente `SELECT`, `INSERT` e `DELETE`; não existe atualização capaz de mover um vínculo para outra candidatura ou conta.
+- Exclusões de candidatura, tecnologia ou usuário removem somente os vínculos dependentes por cascade.
+- A aplicação valida a candidatura antes de criar uma tecnologia e trata corridas de unicidade reutilizando o registro já existente.
+
+Não existe extração automática de descrições, scraping ou inferência por IA. As métricas representam somente dados que o usuário cadastrou explicitamente.
 
 ## Row Level Security
 
@@ -453,6 +475,8 @@ A suíte automatizada cobre:
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
 - schema de lembretes, limites de texto e datas ISO;
 - normalização dos filtros de lembretes e classificação determinística entre próximo, atrasado e concluído;
+- normalização, limites e identificadores de tecnologias vinculadas;
+- ranking de tecnologias por candidatura e cobertura das tags dentro do recorte analítico;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -470,6 +494,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 8:** configurações da conta, preferências e recuperação de senha
 - [x] **Etapa 9:** qualidade, E2E, CI e preparação para deploy
 - [x] **Etapa 10:** lembretes e follow-ups vinculados às candidaturas
+- [x] **Etapa 11:** tecnologias estruturadas por candidatura e ranking no Analytics
 
 ## Licença
 

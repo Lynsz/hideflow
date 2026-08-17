@@ -12,6 +12,7 @@ import type {
   AnalyticsFilters,
   AnalyticsHistory,
   AnalyticsInterview,
+  AnalyticsTechnologyLink,
   MonthlyApplicationDatum,
   SalaryAverage,
 } from "@/features/analytics/types/analytics";
@@ -157,10 +158,39 @@ function salaryAverages(applications: AnalyticsApplication[]): SalaryAverage[] {
     );
 }
 
+function technologyBreakdown(
+  links: AnalyticsTechnologyLink[],
+  totalApplications: number,
+): AnalyticsBarDatum[] {
+  const counts = new Map<string, { label: string; value: number }>();
+  for (const link of links) {
+    const current = counts.get(link.technology.id);
+    counts.set(link.technology.id, {
+      label: link.technology.name,
+      value: (current?.value ?? 0) + 1,
+    });
+  }
+
+  return [...counts.entries()]
+    .sort(
+      ([, left], [, right]) =>
+        right.value - left.value ||
+        left.label.localeCompare(right.label, "pt-BR"),
+    )
+    .slice(0, 8)
+    .map(([key, item]) => ({
+      key,
+      label: item.label,
+      value: item.value,
+      percentage: percentage(item.value, totalApplications),
+    }));
+}
+
 export function calculateAnalytics(
   allApplications: AnalyticsApplication[],
   allHistory: AnalyticsHistory[],
   allInterviews: AnalyticsInterview[],
+  allTechnologyLinks: AnalyticsTechnologyLink[],
   filters: AnalyticsFilters,
   now = new Date(),
 ): AnalyticsData {
@@ -204,6 +234,9 @@ export function calculateAnalytics(
     interviews.push(interview);
     interviewsByApplication.set(interview.application_id, interviews);
   }
+  const technologyLinks = allTechnologyLinks.filter((link) =>
+    applicationIds.has(link.application_id),
+  );
 
   const milestones = applications.map((application) => {
     const history = historyByApplication.get(application.id) ?? [];
@@ -296,6 +329,9 @@ export function calculateAnalytics(
   const appliedAtCount = applications.filter(
     (application) => application.applied_at !== null,
   ).length;
+  const technologyApplicationCount = new Set(
+    technologyLinks.map((link) => link.application_id),
+  ).size;
   const coverage: AnalyticsCoverageDatum[] = [
     {
       key: "source",
@@ -316,6 +352,13 @@ export function calculateAnalytics(
       label: "Data de candidatura informada",
       value: percentage(appliedAtCount, applications.length),
       covered: appliedAtCount,
+      total: applications.length,
+    },
+    {
+      key: "technologies",
+      label: "Tecnologias informadas",
+      value: percentage(technologyApplicationCount, applications.length),
+      covered: technologyApplicationCount,
       total: applications.length,
     },
     {
@@ -373,6 +416,10 @@ export function calculateAnalytics(
     funnel,
     statusBreakdown,
     sourceBreakdown: sourceBreakdown(applications),
+    technologyBreakdown: technologyBreakdown(
+      technologyLinks,
+      applications.length,
+    ),
     salaryAverages: salaryAverages(applications),
     coverage,
     companies,

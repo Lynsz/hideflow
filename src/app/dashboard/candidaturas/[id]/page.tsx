@@ -27,6 +27,8 @@ import {
   formatInterviewType,
 } from "@/features/interviews/constants";
 import { ReminderCard } from "@/features/reminders/components/reminder-card";
+import { ApplicationTechnologyManager } from "@/features/technologies/components/application-technology-manager";
+import { getTechnologyOptions } from "@/features/technologies/services/technology-service";
 
 type ApplicationDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -64,10 +66,10 @@ export default async function ApplicationDetailPage({
   ]);
   const application = await getApplicationById(user!.id, id);
   if (!application) notFound();
-  const companyContacts = await getContactsByCompany(
-    user!.id,
-    application.company_id,
-  );
+  const [companyContacts, technologyOptions] = await Promise.all([
+    getContactsByCompany(user!.id, application.company_id),
+    getTechnologyOptions(user!.id),
+  ]);
   const linkedIds = new Set(application.contacts.map((contact) => contact.id));
   const availableContacts = companyContacts.filter(
     (contact) => !linkedIds.has(contact.id),
@@ -219,6 +221,12 @@ export default async function ApplicationDetailPage({
               />
             </div>
           </section>
+
+          <ApplicationTechnologyManager
+            applicationId={application.id}
+            linked={application.technologies}
+            suggestions={technologyOptions}
+          />
         </div>
       </div>
 

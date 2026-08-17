@@ -431,6 +431,56 @@ export type Database = {
           },
         ];
       };
+      technologies: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          normalized_name: string;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          created_at?: Timestamp;
+        };
+        Update: Partial<Database["public"]["Tables"]["technologies"]["Insert"]>;
+        Relationships: [];
+      };
+      application_technologies: {
+        Row: {
+          application_id: string;
+          technology_id: string;
+          user_id: string;
+          created_at: Timestamp;
+        };
+        Insert: {
+          application_id: string;
+          technology_id: string;
+          user_id: string;
+          created_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["application_technologies"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "application_technologies_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "application_technologies_technology_owner_fkey";
+            columns: ["technology_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "technologies";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -65,11 +65,36 @@ export async function getAnalyticsData(
     }
   }
 
-  const [applications, history, interviews] = await Promise.all([
+  async function loadTechnologies() {
+    const rows = [];
+    for (let from = 0; ; from += ANALYTICS_PAGE_SIZE) {
+      const page = await supabase
+        .from("application_technologies")
+        .select(
+          "application_id, technology:technologies!application_technologies_technology_owner_fkey(id, name)",
+        )
+        .eq("user_id", userId)
+        .order("application_id", { ascending: true })
+        .order("technology_id", { ascending: true })
+        .range(from, from + ANALYTICS_PAGE_SIZE - 1);
+      if (page.error) throw new Error("Não foi possível carregar o Analytics.");
+      rows.push(...page.data);
+      if (page.data.length < ANALYTICS_PAGE_SIZE) return rows;
+    }
+  }
+
+  const [applications, history, interviews, technologies] = await Promise.all([
     loadApplications(),
     loadHistory(),
     loadInterviews(),
+    loadTechnologies(),
   ]);
 
-  return calculateAnalytics(applications, history, interviews, filters);
+  return calculateAnalytics(
+    applications,
+    history,
+    interviews,
+    technologies,
+    filters,
+  );
 }

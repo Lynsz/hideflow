@@ -6,6 +6,7 @@ import type {
   InterviewEvent,
 } from "@/features/interviews/types/interview";
 import type { Reminder } from "@/features/reminders/types/reminder";
+import type { TechnologyOption } from "@/features/technologies/types/technology";
 import type { ApplicationStatus, Database } from "@/types/database";
 
 export type Application = Database["public"]["Tables"]["applications"]["Row"];
@@ -34,6 +35,7 @@ export type ApplicationDetail = ApplicationWithCompany & {
       "id" | "application_id" | "title" | "notes" | "due_at" | "completed_at"
     >
   >;
+  technologies: TechnologyOption[];
 };
 
 export type ApplicationSort = "recent" | "oldest" | "company" | "job";
