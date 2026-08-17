@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 6 implementada no código — documentos privados no Supabase Storage, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 7 implementada no código — Analytics avançado com métricas e gráficos do processo seletivo, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -35,6 +35,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
+- Analytics com período/empresa, KPIs de conversão, funil, tendências, fontes, salários e cobertura dos dados
 - Schema versionado com nove tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -272,6 +273,40 @@ A migration da etapa é `20260816161935_implement_stage_6_private_application_do
 
 Documentos não entram na timeline nesta etapa. A timeline atual agrega eventos auditáveis de fontes especializadas; criar uma tabela de eventos exclusiva para arquivos adicionaria outra fonte específica sem um modelo geral de auditoria.
 
+## Etapa 7: Analytics avançado
+
+`/dashboard/analytics` transforma os dados privados já existentes em uma visão analítica server-side. O usuário pode selecionar os últimos 3, 6 ou 12 meses, todo o histórico e uma empresa específica. Todos os indicadores e gráficos respondem ao mesmo recorte.
+
+### Definições das métricas
+
+- **Candidaturas no período:** registros criados no HireFlow dentro do recorte selecionado.
+- **Candidaturas enviadas:** registros que estão ou já passaram por qualquer status diferente de `saved`; é o denominador das conversões.
+- **Taxa de resposta:** candidaturas enviadas que chegaram a triagem ou etapa posterior, incluindo rejeição.
+- **Taxa de entrevista:** candidaturas enviadas que chegaram a uma etapa de entrevista/desafio, proposta ou contratação, ou que possuem entrevista registrada.
+- **Taxa de proposta:** candidaturas enviadas que chegaram a `offer` ou `hired`.
+- **Taxa de contratação:** candidaturas enviadas que chegaram a `hired`.
+- **Tempo até a primeira resposta:** diferença entre `applied_at` — com `created_at` como fallback — e o primeiro evento mensurável de resposta. Registros com cronologia inválida não entram na média.
+- **Média salarial:** ponto médio da faixa informada, calculado separadamente por moeda. Quando há somente um limite, ele é usado como referência.
+
+O funil força uma progressão monotônica: alcançar uma etapa posterior também conta como alcance das anteriores. Cards exibem numeradores, denominadores e amostra sempre que isso muda a interpretação. Quando não há denominador válido, a interface mostra `—`, não um `0%` enganoso.
+
+### Mapa dos gráficos
+
+| Visual               | Pergunta respondida                                 | Forma                         |
+| -------------------- | --------------------------------------------------- | ----------------------------- |
+| Candidaturas por mês | Como o volume registrado evoluiu?                   | Barras verticais cronológicas |
+| Funil de avanço      | Quantas candidaturas alcançaram cada marco?         | Barras horizontais ordenadas  |
+| Status atual         | Onde estão as candidaturas hoje?                    | Barras por ordem do pipeline  |
+| Principais fontes    | Quais canais concentram candidaturas identificadas? | Ranking de barras horizontais |
+| Média salarial       | Qual a referência salarial por moeda?               | Lista de valores exatos       |
+| Cobertura dos dados  | Quão confiáveis são os campos analíticos?           | Barras de completude          |
+
+Não há dependência de gráficos adicionada: os visuais simples são renderizados no servidor com HTML semântico e CSS, possuem valores textuais, tabela acessível para a série mensal e continuam utilizáveis no mobile. Tecnologias não são inferidas de descrições livres; uma análise desse tipo exige tags estruturadas para não criar resultados enganosos.
+
+### Leitura e performance
+
+As consultas selecionam somente os campos analíticos necessários de `applications`, `application_history` e `interviews`, sempre com `user_id` da sessão e RLS. As três fontes são carregadas em paralelo e paginadas deterministicamente em lotes de 1.000 linhas para evitar truncamento silencioso da Data API. Apenas agregados seguros chegam aos componentes visuais. Não foi necessária uma nova migration: a modelagem das etapas anteriores já contém as fontes de verdade usadas pelos cálculos.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -344,6 +379,10 @@ Os testes unitários cobrem:
 - validação de tipo, MIME, extensão, tamanho e assinatura básica de PDF/DOCX;
 - geração de paths exclusivos e sanitizados sem confiar em caminhos do navegador;
 - formatação dos tamanhos exibidos na interface.
+- normalização segura dos filtros de Analytics;
+- taxas e funil com denominadores explícitos e progressão monotônica;
+- série mensal com meses sem registros, agrupamento de fontes e salários por moeda;
+- cobertura das informações e tempo médio de resposta com amostra mensurável.
 
 Os testes de RLS devem ser executados contra a stack local ou projeto de desenvolvimento após a migration ser aplicada, preferencialmente com dois usuários distintos.
 
@@ -355,7 +394,8 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 4:** Kanban interativo e pipeline de candidaturas
 - [x] **Etapa 5:** entrevistas, contatos e timeline completa da candidatura
 - [x] **Etapa 6:** documentos, Supabase Storage e gerenciamento de currículos e arquivos da candidatura
-- [ ] **Etapa 7:** Analytics avançado + métricas + gráficos do processo seletivo
+- [x] **Etapa 7:** Analytics avançado + métricas + gráficos do processo seletivo
+- [ ] **Etapa 8:** configurações da conta, preferências e recuperação de senha
 
 ## Licença
 

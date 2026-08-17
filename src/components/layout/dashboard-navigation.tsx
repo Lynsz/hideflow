@@ -46,7 +46,6 @@ const navigationItems: NavigationItem[] = [
     label: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
-    disabled: true,
   },
   {
     label: "Configurações",
