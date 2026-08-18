@@ -2,6 +2,7 @@ import { Settings } from "lucide-react";
 import type { Metadata } from "next";
 
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
+import { DataExportPanel } from "@/features/data-export/components/data-export-panel";
 import {
   ChangePasswordForm,
   PreferencesForm,
@@ -38,6 +39,7 @@ export default async function SettingsPage() {
         </div>
         <ChangePasswordForm />
       </div>
+      <DataExportPanel />
     </main>
   );
 }

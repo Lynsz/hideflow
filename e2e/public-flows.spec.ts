@@ -41,6 +41,18 @@ test("redireciona visitante de rota protegida para o login", async ({
   ).toBeVisible();
 });
 
+test("protege o download de dados sem sessão", async ({ request }) => {
+  const response = await request.get(
+    "/dashboard/configuracoes/exportar?format=json",
+    { maxRedirects: 0 },
+  );
+
+  expect(response.status()).toBe(307);
+  expect(response.headers().location).toMatch(
+    /\/login\?next=%2Fdashboard%2Fconfiguracoes%2Fexportar%3Fformat%3Djson$/,
+  );
+});
+
 test("expõe somente o estado mínimo no endpoint de liveness", async ({
   request,
 }) => {

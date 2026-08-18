@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 12 implementada no código — busca global privada e navegação rápida, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 13 implementada no código — exportação e portabilidade dos dados, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -42,6 +42,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Ranking de tecnologias e cobertura das tags no Analytics
 - Busca global por candidaturas, empresas, contatos, lembretes, documentos e tecnologias
 - Navegação rápida para a busca com `Ctrl+K` ou `Cmd+K`
+- Backup JSON dos registros privados e exportação CSV das candidaturas
 - Schema versionado com doze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -407,6 +408,22 @@ As categorias são consultadas em paralelo e exibem no máximo seis itens cada. 
 - Documentos são encontrados apenas por metadados; o conteúdo dos arquivos privados não é lido nem indexado.
 - Não há endpoint público, cache compartilhado entre usuários ou exposição de dados no bundle do cliente.
 
+## Etapa 13: exportação e portabilidade dos dados
+
+A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, eventos, histórico, metadados de documentos, lembretes e tecnologias. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
+
+Os dados são lidos em páginas de 500 registros usando cursores determinísticos, evitando o limite padrão de linhas da Data API. As tabelas são carregadas em paralelo e cada sequência avança pela chave primária. Como não existe uma transação única entre todas as consultas HTTP, alterações feitas durante o download podem aparecer apenas parcialmente no arquivo; recomenda-se evitar edições simultâneas durante backups grandes.
+
+### Segurança e privacidade
+
+- A rota de download exige sessão válida e deriva o proprietário dos claims verificados no servidor.
+- Cada consulta repete o filtro de ownership e continua sujeita às policies RLS.
+- As respostas usam `private, no-store`, `nosniff` e `Content-Disposition: attachment`.
+- Valores CSV iniciados por caracteres de fórmula são neutralizados para evitar execução ao abrir o arquivo em uma planilha.
+- Os arquivos são montados em memória, enviados diretamente na resposta e não são persistidos no servidor ou no Storage.
+- O JSON inclui o `storage_path` e outros metadados dos documentos, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves.
+- O recurso é somente de exportação; restauração e importação automática não fazem parte desta etapa.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -495,6 +512,7 @@ A suíte automatizada cobre:
 - normalização, limites e identificadores de tecnologias vinculadas;
 - ranking de tecnologias por candidatura e cobertura das tags dentro do recorte analítico;
 - normalização, limite e neutralização de caracteres reservados da busca global;
+- serialização JSON versionada, escaping CSV e neutralização de fórmulas de planilha;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -514,6 +532,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 10:** lembretes e follow-ups vinculados às candidaturas
 - [x] **Etapa 11:** tecnologias estruturadas por candidatura e ranking no Analytics
 - [x] **Etapa 12:** busca global privada e navegação rápida
+- [x] **Etapa 13:** exportação e portabilidade dos dados
 
 ## Licença
 
