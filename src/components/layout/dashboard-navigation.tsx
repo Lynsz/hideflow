@@ -4,6 +4,7 @@ import {
   BarChart3,
   BellRing,
   Building2,
+  CalendarDays,
   CalendarClock,
   Columns3,
   LayoutDashboard,
@@ -38,6 +39,11 @@ const navigationItems: NavigationItem[] = [
     label: "Empresas",
     href: "/dashboard/empresas",
     icon: Building2,
+  },
+  {
+    label: "Agenda",
+    href: "/dashboard/agenda",
+    icon: CalendarDays,
   },
   {
     label: "Entrevistas",

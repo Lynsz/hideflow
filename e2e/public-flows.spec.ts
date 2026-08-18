@@ -53,6 +53,18 @@ test("protege o download de dados sem sessão", async ({ request }) => {
   );
 });
 
+test("protege a exportação da agenda sem sessão", async ({ request }) => {
+  const response = await request.get(
+    "/dashboard/agenda/calendario?period=30d&type=all",
+    { maxRedirects: 0 },
+  );
+
+  expect(response.status()).toBe(307);
+  expect(response.headers().location).toMatch(
+    /\/login\?next=%2Fdashboard%2Fagenda%2Fcalendario%3Fperiod%3D30d%26type%3Dall$/,
+  );
+});
+
 test("expõe somente o estado mínimo no endpoint de liveness", async ({
   request,
 }) => {

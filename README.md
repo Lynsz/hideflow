@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 13 implementada no código — exportação e portabilidade dos dados, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 14 implementada no código — agenda unificada e exportação para calendários, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -43,6 +43,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Busca global por candidaturas, empresas, contatos, lembretes, documentos e tecnologias
 - Navegação rápida para a busca com `Ctrl+K` ou `Cmd+K`
 - Backup JSON dos registros privados e exportação CSV das candidaturas
+- Agenda unificada de entrevistas e lembretes com download em iCalendar
 - Schema versionado com doze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -424,6 +425,21 @@ Os dados são lidos em páginas de 500 registros usando cursores determinístico
 - O JSON inclui o `storage_path` e outros metadados dos documentos, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves.
 - O recurso é somente de exportação; restauração e importação automática não fazem parte desta etapa.
 
+## Etapa 14: agenda unificada e iCalendar
+
+`/dashboard/agenda` reúne entrevistas agendadas ou reagendadas e lembretes ainda não concluídos. O usuário pode combinar tipo e período pela URL, escolhendo os próximos 7, 30 ou 90 dias, itens atrasados ou todos os compromissos ativos. A leitura das duas fontes ocorre em paralelo e é limitada aos primeiros 300 itens ordenados cronologicamente.
+
+O recorte usa instantes absolutos no servidor, enquanto os componentes de data exibem cada horário no locale e fuso do navegador. Essa abordagem evita impor um timezone global. A exportação `.ics` mantém timestamps UTC e permite que Google Calendar, Outlook, Apple Calendar e outros clientes façam a conversão local durante a importação.
+
+### Calendário e segurança
+
+- O arquivo iCalendar inclui entrevistas e lembretes visíveis no recorte atual, preservando os filtros selecionados.
+- Entrevistas recebem duração padrão de 60 minutos e lembretes de 30 minutos apenas no arquivo exportado; esses valores não alteram os registros do banco.
+- Textos são escapados e linhas são dobradas no limite de 75 octetos previsto pelo formato iCalendar, inclusive com caracteres UTF-8.
+- A rota exige sessão, deriva `user_id` no servidor e mantém as consultas sob RLS com filtro explícito de ownership.
+- A resposta usa `private, no-store`, `nosniff` e download por `Content-Disposition`; nenhum calendário é salvo no servidor.
+- Não existe sincronização automática, OAuth com calendários externos, envio de convites ou atualização bidirecional nesta etapa.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -513,6 +529,7 @@ A suíte automatizada cobre:
 - ranking de tecnologias por candidatura e cobertura das tags dentro do recorte analítico;
 - normalização, limite e neutralização de caracteres reservados da busca global;
 - serialização JSON versionada, escaping CSV e neutralização de fórmulas de planilha;
+- filtros determinísticos da agenda, ordenação unificada e serialização iCalendar;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -533,6 +550,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 11:** tecnologias estruturadas por candidatura e ranking no Analytics
 - [x] **Etapa 12:** busca global privada e navegação rápida
 - [x] **Etapa 13:** exportação e portabilidade dos dados
+- [x] **Etapa 14:** agenda unificada e exportação iCalendar
 
 ## Licença
 
