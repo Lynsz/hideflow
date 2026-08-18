@@ -7,6 +7,7 @@ import {
   CalendarClock,
   Columns3,
   LayoutDashboard,
+  Search,
   Settings,
   SquareKanban,
   Users,
@@ -22,6 +23,7 @@ import type { NavigationItem } from "@/types/navigation";
 
 const navigationItems: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Busca", href: "/dashboard/busca", icon: Search },
   {
     label: "Candidaturas",
     href: "/dashboard/candidaturas",
@@ -131,7 +133,10 @@ export function DashboardSidebar({ user }: { user: AuthenticatedUser }) {
       <div className="border-border flex h-18 items-center border-b px-5">
         <Logo href="/dashboard" />
       </div>
-      <nav className="flex-1 space-y-1 p-3" aria-label="Navegação do dashboard">
+      <nav
+        className="flex-1 space-y-1 overflow-y-auto p-3"
+        aria-label="Navegação do dashboard"
+      >
         {navigationItems.map((item) => (
           <NavigationItemView
             key={item.label}

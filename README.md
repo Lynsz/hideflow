@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 11 implementada no código — tecnologias estruturadas por candidatura e ranking no Analytics, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 12 implementada no código — busca global privada e navegação rápida, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -40,6 +40,8 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Resumo de pendências e próximo follow-up no dashboard
 - Tecnologias estruturadas, reutilizáveis e normalizadas por usuário
 - Ranking de tecnologias e cobertura das tags no Analytics
+- Busca global por candidaturas, empresas, contatos, lembretes, documentos e tecnologias
+- Navegação rápida para a busca com `Ctrl+K` ou `Cmd+K`
 - Schema versionado com doze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -390,6 +392,21 @@ O Analytics carrega as associações de forma paginada junto das demais fontes e
 
 Não existe extração automática de descrições, scraping ou inferência por IA. As métricas representam somente dados que o usuário cadastrou explicitamente.
 
+## Etapa 12: busca global e navegação rápida
+
+`/dashboard/busca` reúne resultados de candidaturas, empresas, contatos, lembretes, documentos e tecnologias. O formulário usa query string e renderização no servidor, portanto funciona sem JavaScript e pode ser compartilhado ou recarregado preservando o termo. `Ctrl+K` no Windows/Linux e `Cmd+K` no macOS abrem a busca; quando a tela já está aberta, o mesmo atalho move o foco para o campo.
+
+As categorias são consultadas em paralelo e exibem no máximo seis itens cada. Candidaturas também são encontradas pelo nome da empresa e tecnologias apontam para as candidaturas às quais estão vinculadas. A solução favorece consultas pequenas e previsíveis para o escopo atual do produto; um índice de texto completo pode substituir os filtros parciais caso o volume cresça significativamente.
+
+### Segurança e limites
+
+- O usuário autenticado vem da sessão SSR; nenhum identificador de conta é aceito pela URL.
+- Todas as consultas repetem `user_id` explicitamente e permanecem protegidas pelas policies RLS existentes.
+- O termo é normalizado, limitado a 80 caracteres e tem caracteres reservados dos filtros removidos antes de chegar ao PostgREST.
+- A busca exige dois caracteres úteis, seleciona somente os campos necessários e limita cada categoria a seis resultados.
+- Documentos são encontrados apenas por metadados; o conteúdo dos arquivos privados não é lido nem indexado.
+- Não há endpoint público, cache compartilhado entre usuários ou exposição de dados no bundle do cliente.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -477,6 +494,7 @@ A suíte automatizada cobre:
 - normalização dos filtros de lembretes e classificação determinística entre próximo, atrasado e concluído;
 - normalização, limites e identificadores de tecnologias vinculadas;
 - ranking de tecnologias por candidatura e cobertura das tags dentro do recorte analítico;
+- normalização, limite e neutralização de caracteres reservados da busca global;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -495,6 +513,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 9:** qualidade, E2E, CI e preparação para deploy
 - [x] **Etapa 10:** lembretes e follow-ups vinculados às candidaturas
 - [x] **Etapa 11:** tecnologias estruturadas por candidatura e ranking no Analytics
+- [x] **Etapa 12:** busca global privada e navegação rápida
 
 ## Licença
 
