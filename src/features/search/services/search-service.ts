@@ -23,6 +23,8 @@ const TECHNOLOGY_LINK_SELECT =
   "technology_id, application:applications!application_technologies_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name)), technology:technologies!application_technologies_technology_owner_fkey(id, name)" as const;
 const ACTIVITY_SELECT =
   "id, title, notes, application:applications!application_activities_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name))" as const;
+const OFFER_SELECT =
+  "id, benefits, equity, notes, application:applications!application_offers_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name))" as const;
 
 function joinDescription(...parts: Array<string | null | undefined>) {
   return parts.filter(Boolean).join(" · ");
@@ -65,6 +67,7 @@ export async function searchWorkspace(
     documents,
     technologies,
     activities,
+    offers,
   ] = await Promise.all([
     supabase
       .from("companies")
@@ -119,6 +122,15 @@ export async function searchWorkspace(
       .or(`title.ilike.${pattern},notes.ilike.${pattern}`)
       .order("occurred_at", { ascending: false })
       .limit(SEARCH_RESULT_LIMIT),
+    supabase
+      .from("application_offers")
+      .select(OFFER_SELECT)
+      .eq("user_id", userId)
+      .or(
+        `benefits.ilike.${pattern},equity.ilike.${pattern},notes.ilike.${pattern}`,
+      )
+      .order("updated_at", { ascending: false })
+      .limit(SEARCH_RESULT_LIMIT),
   ]);
 
   if (
@@ -128,7 +140,8 @@ export async function searchWorkspace(
     reminders.error ||
     documents.error ||
     technologies.error ||
-    activities.error
+    activities.error ||
+    offers.error
   ) {
     throw new Error("Não foi possível concluir a busca global.");
   }
@@ -234,6 +247,17 @@ export async function searchWorkspace(
     ),
     href: `/dashboard/candidaturas/${activity.application.id}`,
   }));
+  const offerItems = offers.data.map((offer) => ({
+    id: offer.id,
+    kind: "offer" as const,
+    title: offer.application.job_title,
+    description: joinDescription(
+      offer.application.company.name,
+      "Proposta",
+      archiveLabel(offer.application.archived_at),
+    ),
+    href: `/dashboard/candidaturas/${offer.application.id}`,
+  }));
 
   return createResponse([
     { kind: "application", label: "Candidaturas", items: applicationItems },
@@ -243,5 +267,6 @@ export async function searchWorkspace(
     { kind: "document", label: "Documentos", items: documentItems },
     { kind: "technology", label: "Tecnologias", items: technologyItems },
     { kind: "activity", label: "Interações", items: activityItems },
+    { kind: "offer", label: "Propostas", items: offerItems },
   ]);
 }

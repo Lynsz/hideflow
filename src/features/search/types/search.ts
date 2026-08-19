@@ -5,7 +5,8 @@ export type SearchResultKind =
   | "reminder"
   | "document"
   | "technology"
-  | "activity";
+  | "activity"
+  | "offer";
 
 export type GlobalSearchResult = {
   id: string;

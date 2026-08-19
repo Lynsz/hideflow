@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 16 implementada no código — arquivamento reversível de candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 17 implementada no código — registro e comparação de propostas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -40,13 +40,14 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Resumo de pendências e próximo follow-up no dashboard
 - Tecnologias estruturadas, reutilizáveis e normalizadas por usuário
 - Ranking de tecnologias e cobertura das tags no Analytics
-- Busca global por candidaturas, empresas, contatos, lembretes, documentos, tecnologias e interações
+- Busca global por candidaturas, empresas, contatos, lembretes, documentos, tecnologias, interações e propostas
 - Navegação rápida para a busca com `Ctrl+K` ou `Cmd+K`
 - Backup JSON dos registros privados e exportação CSV das candidaturas
 - Agenda unificada de entrevistas e lembretes com download em iCalendar
 - Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
 - Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
-- Schema versionado com treze tabelas, RLS, índices e constraints
+- Registro de propostas e comparação de remuneração, bônus e condições
+- Schema versionado com catorze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -413,7 +414,7 @@ As categorias são consultadas em paralelo e exibem no máximo seis itens cada. 
 
 ## Etapa 13: exportação e portabilidade dos dados
 
-A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, eventos, histórico, metadados de documentos, lembretes, tecnologias e interações manuais. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
+A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, eventos, histórico, metadados de documentos, lembretes, tecnologias, interações manuais e propostas. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
 
 Os dados são lidos em páginas de 500 registros usando cursores determinísticos, evitando o limite padrão de linhas da Data API. As tabelas são carregadas em paralelo e cada sequência avança pela chave primária. Como não existe uma transação única entre todas as consultas HTTP, alterações feitas durante o download podem aparecer apenas parcialmente no arquivo; recomenda-se evitar edições simultâneas durante backups grandes.
 
@@ -469,6 +470,20 @@ O Analytics, os totais históricos, a busca global, a agenda e o backup continua
 - `archived_at` é `TIMESTAMPTZ` anulável: `NULL` significa ativa e um instante identifica quando foi arquivada.
 - Índices parciais por criação e atualização cobrem lista, Kanban e recentes que exigem `archived_at IS NULL`, sem ampliá-los com registros arquivados.
 - A operação é reversível e não usa soft delete: exclusão definitiva permanece uma ação separada, com remoção dos documentos privados antes do cascade relacional.
+
+## Etapa 17: propostas e comparação de ofertas
+
+Cada candidatura pode armazenar uma proposta com salário-base mensal ou anual, moeda, bônus, participação, benefícios, data de recebimento, prazo de decisão e observações. A tela `/dashboard/ofertas` compara os valores anuais equivalentes e o caixa anual com bônus, mantendo cada moeda separada e sem sugerir uma conversão cambial implícita.
+
+Salvar ou excluir uma proposta não altera o status do pipeline. Candidaturas arquivadas continuam visíveis na comparação com identificação própria, e textos de benefícios, participação e observações passam a integrar a busca global. O backup JSON avança para o schema 4 e inclui todas as propostas da conta.
+
+### Consistência, segurança e limites
+
+- Existe no máximo uma proposta por candidatura; a FK composta `(application_id, user_id)` impede vínculos entre contas e remove a proposta no cascade da candidatura.
+- O `user_id` é sempre derivado dos claims da sessão no servidor. Server Actions validam UUIDs, moeda, valores, datas e limites de texto antes da escrita.
+- RLS restringe `SELECT`, `INSERT`, `UPDATE` e `DELETE` ao proprietário, com privilégios explícitos apenas para `authenticated`.
+- Datas de recebimento e decisão usam o tipo civil `date`, evitando deslocamento de dia por fuso horário.
+- O equivalente anual multiplica salários mensais por 12 e soma somente o bônus informado. Benefícios, impostos, participação e moedas diferentes não são convertidos em um ranking financeiro automático.
 
 ## Row Level Security
 
@@ -586,6 +601,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 14:** agenda unificada e exportação iCalendar
 - [x] **Etapa 15:** histórico manual de interações por candidatura
 - [x] **Etapa 16:** arquivamento e restauração de candidaturas
+- [x] **Etapa 17:** propostas e comparação de ofertas
 
 ## Licença
 

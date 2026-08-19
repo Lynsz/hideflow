@@ -58,6 +58,8 @@ export type AnalyticsPeriod = "3m" | "6m" | "12m" | "all";
 export type ApplicationActivityType =
   "note" | "email" | "phone_call" | "linkedin" | "other";
 
+export type OfferSalaryPeriod = "monthly" | "annual";
+
 type Timestamp = string;
 
 export type Database = {
@@ -398,6 +400,52 @@ export type Database = {
           },
         ];
       };
+      application_offers: {
+        Row: {
+          id: string;
+          user_id: string;
+          application_id: string;
+          salary_amount: number;
+          salary_period: OfferSalaryPeriod;
+          currency: SupportedCurrency;
+          bonus_amount: number | null;
+          equity: string | null;
+          benefits: string | null;
+          received_at: string;
+          decision_deadline: string | null;
+          notes: string | null;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          application_id: string;
+          salary_amount: number;
+          salary_period: OfferSalaryPeriod;
+          currency: SupportedCurrency;
+          bonus_amount?: number | null;
+          equity?: string | null;
+          benefits?: string | null;
+          received_at: string;
+          decision_deadline?: string | null;
+          notes?: string | null;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["application_offers"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "application_offers_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: true;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       documents: {
         Row: {
           id: string;
@@ -526,6 +574,7 @@ export type Database = {
     Enums: {
       application_status: ApplicationStatus;
       application_activity_type: ApplicationActivityType;
+      offer_salary_period: OfferSalaryPeriod;
     };
     CompositeTypes: Record<string, never>;
   };

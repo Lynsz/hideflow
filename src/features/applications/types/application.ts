@@ -8,6 +8,7 @@ import type {
 import type { Reminder } from "@/features/reminders/types/reminder";
 import type { TechnologyOption } from "@/features/technologies/types/technology";
 import type { ApplicationActivity } from "@/features/activities/types/activity";
+import type { ApplicationOffer } from "@/features/offers/types/offer";
 import type { ApplicationStatus, Database } from "@/types/database";
 
 export type Application = Database["public"]["Tables"]["applications"]["Row"];
@@ -38,6 +39,7 @@ export type ApplicationDetail = ApplicationWithCompany & {
   >;
   technologies: TechnologyOption[];
   activities: ApplicationActivity[];
+  offer: ApplicationOffer | null;
 };
 
 export type ApplicationSort = "recent" | "oldest" | "company" | "job";

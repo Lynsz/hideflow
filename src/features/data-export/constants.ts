@@ -1,4 +1,4 @@
-export const DATA_EXPORT_SCHEMA_VERSION = 3;
+export const DATA_EXPORT_SCHEMA_VERSION = 4;
 export const DATA_EXPORT_PAGE_SIZE = 500;
 
 export const DATA_EXPORT_FORMATS = ["json", "csv"] as const;

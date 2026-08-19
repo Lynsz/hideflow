@@ -31,6 +31,7 @@ import {
   formatInterviewType,
 } from "@/features/interviews/constants";
 import { ReminderCard } from "@/features/reminders/components/reminder-card";
+import { OfferManager } from "@/features/offers/components/offer-manager";
 import { ApplicationTechnologyManager } from "@/features/technologies/components/application-technology-manager";
 import { getTechnologyOptions } from "@/features/technologies/services/technology-service";
 
@@ -310,6 +311,13 @@ export default async function ApplicationDetailPage({
       <DocumentManager
         applicationId={application.id}
         documents={application.documents}
+      />
+
+      <OfferManager
+        applicationId={application.id}
+        offer={application.offer}
+        defaultCurrency={application.currency}
+        today={now.slice(0, 10)}
       />
 
       <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">

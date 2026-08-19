@@ -94,6 +94,7 @@ const snapshot: UserDataSnapshot = {
     },
   ],
   applicationActivities: [],
+  applicationOffers: [],
 };
 
 describe("isDataExportFormat", () => {
@@ -129,7 +130,7 @@ describe("export formatters", () => {
     );
     const parsed = JSON.parse(serializeJsonExport(result));
 
-    expect(parsed.schemaVersion).toBe(3);
+    expect(parsed.schemaVersion).toBe(4);
     expect(parsed.account.email).toBe("ana@example.com");
     expect(parsed.data.applications).toHaveLength(1);
   });

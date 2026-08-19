@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Columns3,
   LayoutDashboard,
+  HandCoins,
   Search,
   Settings,
   SquareKanban,
@@ -55,6 +56,7 @@ const navigationItems: NavigationItem[] = [
     href: "/dashboard/lembretes",
     icon: BellRing,
   },
+  { label: "Propostas", href: "/dashboard/ofertas", icon: HandCoins },
   { label: "Contatos", href: "/dashboard/contatos", icon: Users },
   {
     label: "Analytics",

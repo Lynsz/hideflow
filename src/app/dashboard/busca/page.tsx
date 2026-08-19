@@ -4,6 +4,7 @@ import {
   Building2,
   Code2,
   FileText,
+  HandCoins,
   MessageSquareText,
   Search,
   Users,
@@ -37,6 +38,7 @@ const RESULT_ICONS: Record<SearchResultKind, LucideIcon> = {
   document: FileText,
   technology: Code2,
   activity: MessageSquareText,
+  offer: HandCoins,
 };
 
 const SEARCHABLE_AREAS = [
@@ -47,6 +49,7 @@ const SEARCHABLE_AREAS = [
   "documentos",
   "tecnologias",
   "interações",
+  "propostas",
 ] as const;
 
 function SearchResultGroup({ group }: { group: GlobalSearchGroup }) {
@@ -191,7 +194,7 @@ export default async function SearchPage({
         <div className="border-border bg-surface mt-8 rounded-xl border">
           <EmptyState
             title={`Nenhum resultado para “${queryState.query}”`}
-            description="Tente outro nome, cargo, empresa, arquivo, tecnologia ou interação."
+            description="Tente outro nome, cargo, empresa, arquivo, tecnologia, interação ou proposta."
           />
         </div>
       ) : (
