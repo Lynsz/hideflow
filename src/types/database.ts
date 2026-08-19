@@ -135,6 +135,7 @@ export type Database = {
           description: string | null;
           notes: string | null;
           status: ApplicationStatus;
+          archived_at: Timestamp | null;
           created_at: Timestamp;
           updated_at: Timestamp;
         };
@@ -155,6 +156,7 @@ export type Database = {
           description?: string | null;
           notes?: string | null;
           status?: ApplicationStatus;
+          archived_at?: Timestamp | null;
           created_at?: Timestamp;
           updated_at?: Timestamp;
         };

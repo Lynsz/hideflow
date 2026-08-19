@@ -15,6 +15,7 @@ describe("application filters", () => {
         workMode: "remote",
         employmentType: "clt",
         company: "company-id",
+        archive: "archived",
         sort: "job",
         page: "2",
       }),
@@ -24,6 +25,7 @@ describe("application filters", () => {
       workMode: "remote",
       employmentType: "clt",
       companyId: "company-id",
+      archive: "archived",
       sort: "job",
       page: 2,
     });
@@ -35,6 +37,7 @@ describe("application filters", () => {
       workMode: "invalid",
       employmentType: "invalid",
       sort: "invalid",
+      archive: "invalid",
       page: "-3",
     });
 
@@ -43,6 +46,7 @@ describe("application filters", () => {
       workMode: "",
       employmentType: "",
       sort: "recent",
+      archive: "active",
       page: 1,
     });
   });
@@ -57,11 +61,12 @@ describe("application filters", () => {
     const filters = parseApplicationFilters({
       q: "Frontend",
       status: "screening",
+      archive: "all",
       page: "1",
     });
 
     expect(buildApplicationListUrl(filters, { page: 2 })).toBe(
-      "/dashboard/candidaturas?q=Frontend&status=screening&page=2",
+      "/dashboard/candidaturas?q=Frontend&status=screening&archive=all&page=2",
     );
   });
 });

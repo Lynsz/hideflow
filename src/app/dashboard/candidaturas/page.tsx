@@ -41,7 +41,17 @@ type ApplicationsPageProps = {
 
 const FEEDBACK: Record<string, string> = {
   deleted: "Candidatura excluída com sucesso.",
+  archived: "Candidatura arquivada sem excluir seus dados.",
+  restored: "Candidatura restaurada para a lista ativa.",
 };
+
+function ArchivedBadge() {
+  return (
+    <span className="border-border bg-muted text-muted-foreground rounded-full border px-2 py-1 text-[10px] font-medium">
+      Arquivada
+    </span>
+  );
+}
 
 function ApplicationMobileCard({
   application,
@@ -62,7 +72,10 @@ function ApplicationMobileCard({
             {application.company.name}
           </p>
         </div>
-        <StatusBadge status={application.status} />
+        <div className="flex flex-wrap justify-end gap-2">
+          {application.archived_at ? <ArchivedBadge /> : null}
+          <StatusBadge status={application.status} />
+        </div>
       </div>
       <dl className="text-muted-foreground mt-4 grid grid-cols-2 gap-3 text-xs">
         <div>
@@ -103,7 +116,8 @@ export default async function ApplicationsPage({
     filters.status ||
     filters.workMode ||
     filters.employmentType ||
-    filters.companyId,
+    filters.companyId ||
+    filters.archive !== "active",
   );
 
   return (
@@ -141,7 +155,7 @@ export default async function ApplicationsPage({
           />
           Busca e filtros
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
           <label className="relative sm:col-span-2">
             <span className="sr-only">Buscar por vaga ou empresa</span>
             <Search
@@ -206,6 +220,16 @@ export default async function ApplicationsPage({
                 {company.name}
               </option>
             ))}
+          </select>
+          <select
+            name="archive"
+            defaultValue={filters.archive}
+            className={inputStyles}
+            aria-label="Arquivamento"
+          >
+            <option value="active">Ativas</option>
+            <option value="archived">Arquivadas</option>
+            <option value="all">Ativas e arquivadas</option>
           </select>
         </div>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -292,6 +316,11 @@ export default async function ApplicationsPage({
                           <p className="text-muted-foreground mt-1 text-xs">
                             {application.company.name}
                           </p>
+                          {application.archived_at ? (
+                            <span className="mt-2 inline-block">
+                              <ArchivedBadge />
+                            </span>
+                          ) : null}
                         </td>
                         <td className="px-4 py-4">
                           <StatusBadge status={application.status} />

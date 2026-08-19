@@ -4,6 +4,7 @@ import {
   WORK_MODES,
 } from "@/features/applications/constants";
 import type {
+  ApplicationArchiveFilter,
   ApplicationFilters,
   ApplicationSort,
 } from "@/features/applications/types/application";
@@ -20,6 +21,11 @@ const SORTS: readonly ApplicationSort[] = [
   "oldest",
   "company",
   "job",
+];
+const ARCHIVE_FILTERS: readonly ApplicationArchiveFilter[] = [
+  "active",
+  "archived",
+  "all",
 ];
 
 function first(value: string | string[] | undefined) {
@@ -40,6 +46,7 @@ export function parseApplicationFilters(raw: RawFilters): ApplicationFilters {
   const workMode = first(raw.workMode);
   const employmentType = first(raw.employmentType);
   const sort = first(raw.sort);
+  const archive = first(raw.archive);
   const parsedPage = Number.parseInt(first(raw.page), 10);
 
   return {
@@ -54,6 +61,9 @@ export function parseApplicationFilters(raw: RawFilters): ApplicationFilters {
       ? (employmentType as EmploymentType)
       : "",
     companyId: first(raw.company),
+    archive: ARCHIVE_FILTERS.includes(archive as ApplicationArchiveFilter)
+      ? (archive as ApplicationArchiveFilter)
+      : "active",
     sort: SORTS.includes(sort as ApplicationSort)
       ? (sort as ApplicationSort)
       : "recent",
@@ -73,6 +83,7 @@ export function buildApplicationListUrl(
   if (next.workMode) params.set("workMode", next.workMode);
   if (next.employmentType) params.set("employmentType", next.employmentType);
   if (next.companyId) params.set("company", next.companyId);
+  if (next.archive !== "active") params.set("archive", next.archive);
   if (next.sort !== "recent") params.set("sort", next.sort);
   if (next.page > 1) params.set("page", String(next.page));
 

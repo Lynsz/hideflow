@@ -11,21 +11,25 @@ import { createClient } from "@/lib/supabase/server";
 
 const COMPANY_SELECT = "id, name, location" as const;
 const APPLICATION_SELECT =
-  "id, company_id, job_title, location, source, company:companies!applications_company_owner_fkey(id, name)" as const;
+  "id, company_id, job_title, location, source, archived_at, company:companies!applications_company_owner_fkey(id, name)" as const;
 const CONTACT_SELECT =
   "id, name, role, email, phone, company:companies!contacts_company_owner_fkey(id, name)" as const;
 const REMINDER_SELECT =
-  "id, title, notes, application:applications!reminders_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name))" as const;
+  "id, title, notes, application:applications!reminders_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name))" as const;
 const DOCUMENT_SELECT =
-  "id, name, original_name, application:applications!documents_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name))" as const;
+  "id, name, original_name, application:applications!documents_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name))" as const;
 const TECHNOLOGY_SELECT = "id, name" as const;
 const TECHNOLOGY_LINK_SELECT =
-  "technology_id, application:applications!application_technologies_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name)), technology:technologies!application_technologies_technology_owner_fkey(id, name)" as const;
+  "technology_id, application:applications!application_technologies_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name)), technology:technologies!application_technologies_technology_owner_fkey(id, name)" as const;
 const ACTIVITY_SELECT =
-  "id, title, notes, application:applications!application_activities_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name))" as const;
+  "id, title, notes, application:applications!application_activities_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name))" as const;
 
 function joinDescription(...parts: Array<string | null | undefined>) {
   return parts.filter(Boolean).join(" · ");
+}
+
+function archiveLabel(archivedAt: string | null) {
+  return archivedAt ? "Arquivada" : undefined;
 }
 
 function uniqueById(items: GlobalSearchResult[]) {
@@ -167,6 +171,7 @@ export async function searchWorkspace(
       description: joinDescription(
         application.company.name,
         application.location,
+        archiveLabel(application.archived_at),
       ),
       href: `/dashboard/candidaturas/${application.id}`,
     })),
@@ -192,6 +197,7 @@ export async function searchWorkspace(
     description: joinDescription(
       reminder.application.job_title,
       reminder.application.company.name,
+      archiveLabel(reminder.application.archived_at),
     ),
     href: `/dashboard/lembretes/${reminder.id}/editar`,
   }));
@@ -202,6 +208,7 @@ export async function searchWorkspace(
     description: joinDescription(
       document.application.job_title,
       document.application.company.name,
+      archiveLabel(document.application.archived_at),
     ),
     href: `/dashboard/candidaturas/${document.application.id}`,
   }));
@@ -212,6 +219,7 @@ export async function searchWorkspace(
     description: joinDescription(
       link.application.job_title,
       link.application.company.name,
+      archiveLabel(link.application.archived_at),
     ),
     href: `/dashboard/candidaturas/${link.application.id}`,
   }));
@@ -222,6 +230,7 @@ export async function searchWorkspace(
     description: joinDescription(
       activity.application.job_title,
       activity.application.company.name,
+      archiveLabel(activity.application.archived_at),
     ),
     href: `/dashboard/candidaturas/${activity.application.id}`,
   }));

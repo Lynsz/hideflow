@@ -41,6 +41,7 @@ export type ApplicationDetail = ApplicationWithCompany & {
 };
 
 export type ApplicationSort = "recent" | "oldest" | "company" | "job";
+export type ApplicationArchiveFilter = "active" | "archived" | "all";
 
 export type ApplicationFilters = {
   query: string;
@@ -48,6 +49,7 @@ export type ApplicationFilters = {
   workMode: NonNullable<Application["work_mode"]> | "";
   employmentType: NonNullable<Application["employment_type"]> | "";
   companyId: string;
+  archive: ApplicationArchiveFilter;
   sort: ApplicationSort;
   page: number;
 };

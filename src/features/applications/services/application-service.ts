@@ -35,6 +35,7 @@ const APPLICATION_SELECT = `
   description,
   notes,
   status,
+  archived_at,
   created_at,
   updated_at,
   company:companies!applications_company_owner_fkey(id, name)
@@ -123,6 +124,10 @@ export async function getApplications(
     query = query.eq("employment_type", filters.employmentType);
   }
   if (filters.companyId) query = query.eq("company_id", filters.companyId);
+  if (filters.archive === "active") query = query.is("archived_at", null);
+  if (filters.archive === "archived") {
+    query = query.not("archived_at", "is", null);
+  }
 
   if (filters.sort === "oldest") {
     query = query.order("created_at", { ascending: true });
@@ -282,6 +287,7 @@ export async function getKanbanApplications(
     .from("applications")
     .select(KANBAN_APPLICATION_SELECT, { count: "exact" })
     .eq("user_id", userId)
+    .is("archived_at", null)
     .order("updated_at", { ascending: false })
     .order("id", { ascending: true })
     .range(0, KANBAN_APPLICATION_LIMIT - 1);
@@ -371,4 +377,44 @@ export async function deleteApplicationRecord(
     .eq("user_id", userId)
     .select("id")
     .maybeSingle();
+}
+
+export async function setApplicationArchived(
+  userId: string,
+  applicationId: string,
+  archived: boolean,
+) {
+  const supabase = await createClient();
+  let mutation = supabase
+    .from("applications")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", applicationId)
+    .eq("user_id", userId);
+  mutation = archived
+    ? mutation.is("archived_at", null)
+    : mutation.not("archived_at", "is", null);
+
+  const { data, error } = await mutation
+    .select("id, archived_at")
+    .maybeSingle();
+  if (error) return { outcome: "error" as const, error };
+  if (data) {
+    return {
+      outcome: "updated" as const,
+      archived: data.archived_at !== null,
+    };
+  }
+
+  const current = await supabase
+    .from("applications")
+    .select("archived_at")
+    .eq("id", applicationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (current.error) return { outcome: "error" as const, error: current.error };
+  if (!current.data) return { outcome: "not_found" as const };
+  return {
+    outcome: "unchanged" as const,
+    archived: current.data.archived_at !== null,
+  };
 }

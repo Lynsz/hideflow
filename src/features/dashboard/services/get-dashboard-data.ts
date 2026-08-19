@@ -27,6 +27,7 @@ const RECENT_SELECT = `
   description,
   notes,
   status,
+  archived_at,
   created_at,
   updated_at,
   company:companies!applications_company_owner_fkey(id, name)
@@ -50,6 +51,7 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
       .from("applications")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id);
+  const activeCount = () => count().is("archived_at", null);
 
   const [
     total,
@@ -66,21 +68,22 @@ export const getDashboardData = cache(async (): Promise<DashboardData> => {
     nextReminder,
   ] = await Promise.all([
     count(),
-    count().in("status", [...ACTIVE_APPLICATION_STATUSES]),
-    count().in("status", [...INTERVIEW_APPLICATION_STATUSES]),
+    activeCount().in("status", [...ACTIVE_APPLICATION_STATUSES]),
+    activeCount().in("status", [...INTERVIEW_APPLICATION_STATUSES]),
     supabase
       .from("interviews")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .gte("scheduled_at", now)
       .in("result", ["scheduled", "rescheduled"]),
-    count().eq("status", "offer"),
+    activeCount().eq("status", "offer"),
     count().eq("status", "hired"),
     count().eq("status", "rejected"),
     supabase
       .from("applications")
       .select(RECENT_SELECT)
       .eq("user_id", user.id)
+      .is("archived_at", null)
       .order("updated_at", { ascending: false })
       .limit(5),
     supabase

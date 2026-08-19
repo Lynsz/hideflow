@@ -51,6 +51,7 @@ const snapshot: UserDataSnapshot = {
       description: "Linha 1\nLinha 2",
       notes: null,
       status: "applied",
+      archived_at: null,
       created_at: "2026-08-01T12:00:00.000Z",
       updated_at: "2026-08-02T12:00:00.000Z",
     },
@@ -128,7 +129,7 @@ describe("export formatters", () => {
     );
     const parsed = JSON.parse(serializeJsonExport(result));
 
-    expect(parsed.schemaVersion).toBe(2);
+    expect(parsed.schemaVersion).toBe(3);
     expect(parsed.account.email).toBe("ana@example.com");
     expect(parsed.data.applications).toHaveLength(1);
   });

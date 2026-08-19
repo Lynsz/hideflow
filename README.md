@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 15 implementada no código — histórico manual de interações por candidatura, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 16 implementada no código — arquivamento reversível de candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -45,6 +45,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Backup JSON dos registros privados e exportação CSV das candidaturas
 - Agenda unificada de entrevistas e lembretes com download em iCalendar
 - Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
+- Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
 - Schema versionado com treze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -443,7 +444,7 @@ O recorte usa instantes absolutos no servidor, enquanto os componentes de data e
 
 ## Etapa 15: histórico manual de interações
 
-Os detalhes de cada candidatura permitem registrar anotações, e-mails, ligações, contatos pelo LinkedIn e outras interações. Cada registro guarda título, detalhes opcionais e o instante em que aconteceu; a data local do dispositivo é convertida para ISO 8601 antes de chegar à Server Action. As interações entram na timeline unificada e na busca global, além de fazerem parte do backup JSON versionado com schema 2.
+Os detalhes de cada candidatura permitem registrar anotações, e-mails, ligações, contatos pelo LinkedIn e outras interações. Cada registro guarda título, detalhes opcionais e o instante em que aconteceu; a data local do dispositivo é convertida para ISO 8601 antes de chegar à Server Action. As interações entram na timeline unificada e na busca global, além de fazerem parte do backup JSON versionado.
 
 ### Segurança e escopo
 
@@ -453,6 +454,21 @@ Os detalhes de cada candidatura permitem registrar anotações, e-mails, ligaç�
 - Título, tipo, UUID, data e limites de texto são validados novamente na Server Action, e as consultas repetem o filtro de ownership.
 - O recurso apenas documenta ações realizadas pelo usuário. Não envia e-mails, mensagens no LinkedIn, ligações ou follow-ups automáticos.
 - Exclusões exigem confirmação na interface. O backup continua sendo o mecanismo disponível para portabilidade e retenção externa.
+
+## Etapa 16: arquivamento reversível
+
+Candidaturas encerradas podem ser arquivadas nos detalhes sem apagar nenhum dado. A listagem usa “Ativas” como recorte padrão e permite alternar para “Arquivadas” ou “Ativas e arquivadas”; o Kanban e os registros recentes do dashboard mostram somente processos ativos. Restaurar devolve a candidatura imediatamente às telas operacionais.
+
+O Analytics, os totais históricos, a busca global, a agenda e o backup continuam incluindo candidaturas arquivadas. Resultados da busca identificam o estado arquivado, e o backup JSON passa ao schema 3 por incluir `archived_at`. Entrevistas e lembretes existentes não são cancelados implicitamente, evitando perda silenciosa de compromissos.
+
+### Consistência e performance
+
+- A Server Action recebe apenas UUID e o estado desejado, deriva o proprietário da sessão e repete `user_id` na atualização.
+- A mutation compara o estado atual de `archived_at`, evitando sobrescrita silenciosa entre abas e tratando operações repetidas como idempotentes.
+- O arquivamento reutiliza a policy RLS de `UPDATE`, com `USING` e `WITH CHECK`; nenhum privilégio anônimo foi adicionado.
+- `archived_at` é `TIMESTAMPTZ` anulável: `NULL` significa ativa e um instante identifica quando foi arquivada.
+- Índices parciais por criação e atualização cobrem lista, Kanban e recentes que exigem `archived_at IS NULL`, sem ampliá-los com registros arquivados.
+- A operação é reversível e não usa soft delete: exclusão definitiva permanece uma ação separada, com remoção dos documentos privados antes do cascade relacional.
 
 ## Row Level Security
 
@@ -540,6 +556,7 @@ A suíte automatizada cobre:
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
+- filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
 - normalização dos filtros de lembretes e classificação determinística entre próximo, atrasado e concluído;
 - normalização, limites e identificadores de tecnologias vinculadas;
 - ranking de tecnologias por candidatura e cobertura das tags dentro do recorte analítico;
@@ -568,6 +585,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 13:** exportação e portabilidade dos dados
 - [x] **Etapa 14:** agenda unificada e exportação iCalendar
 - [x] **Etapa 15:** histórico manual de interações por candidatura
+- [x] **Etapa 16:** arquivamento e restauração de candidaturas
 
 ## Licença
 

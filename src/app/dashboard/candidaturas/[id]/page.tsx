@@ -7,7 +7,10 @@ import { FormFeedback } from "@/components/ui/form-feedback";
 import { LocalDateTime } from "@/components/ui/local-date-time";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { ActivityForm } from "@/features/activities/components/activity-form";
-import { DeleteApplicationButton } from "@/features/applications/components/application-actions";
+import {
+  ArchiveApplicationButton,
+  DeleteApplicationButton,
+} from "@/features/applications/components/application-actions";
 import { ApplicationTimeline } from "@/features/applications/components/application-timeline";
 import { StatusSelect } from "@/features/applications/components/status-select";
 import {
@@ -99,6 +102,17 @@ export default async function ApplicationDetailPage({
         </div>
       ) : null}
 
+      {application.archived_at ? (
+        <div className="border-border bg-muted/40 mt-5 rounded-xl border px-4 py-3 text-sm">
+          <p className="font-medium">Candidatura arquivada</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Fora da lista ativa e do Kanban desde{" "}
+            <LocalDateTime value={application.archived_at} />. Histórico e
+            registros continuam disponíveis.
+          </p>
+        </div>
+      ) : null}
+
       <header className="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
@@ -112,6 +126,11 @@ export default async function ApplicationDetailPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ArchiveApplicationButton
+            applicationId={application.id}
+            jobTitle={application.job_title}
+            archived={application.archived_at !== null}
+          />
           <Link
             href={`/dashboard/candidaturas/${application.id}/editar`}
             className={buttonStyles({ variant: "secondary" })}

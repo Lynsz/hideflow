@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import {
   applicationSchema,
+  applicationArchiveSchema,
   statusUpdateSchema,
 } from "@/features/applications/schemas/application-schema";
 import {
@@ -12,6 +13,7 @@ import {
   insertApplication,
   updateApplicationRecord,
   updateApplicationStatusRecord,
+  setApplicationArchived,
 } from "@/features/applications/services/application-service";
 import { getApplicationDocumentPaths } from "@/features/documents/services/document-service";
 import { removeDocumentObjects } from "@/features/documents/services/document-storage-service";
@@ -23,6 +25,7 @@ export type ApplicationActionResult = {
   redirectTo?: string;
   changed?: boolean;
   currentStatus?: ApplicationStatus;
+  archived?: boolean;
 };
 
 const INVALID_APPLICATION = "Revise os dados da candidatura e tente novamente.";
@@ -48,6 +51,60 @@ export async function createApplication(
     success: true,
     message: "Candidatura criada com sucesso.",
     redirectTo: `/dashboard/candidaturas/${data.id}?feedback=created`,
+  };
+}
+
+export async function changeApplicationArchive(
+  input: unknown,
+): Promise<ApplicationActionResult> {
+  const user = await getCurrentUser();
+  if (!user)
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
+
+  const parsed = applicationArchiveSchema.safeParse(input);
+  if (!parsed.success)
+    return { success: false, message: "Candidatura inválida." };
+
+  const result = await setApplicationArchived(
+    user.id,
+    parsed.data.applicationId,
+    parsed.data.archived,
+  );
+  if (result.outcome === "error") {
+    return { success: false, message: "Não foi possível atualizar o arquivo." };
+  }
+  if (result.outcome === "not_found") {
+    return {
+      success: false,
+      message: "Candidatura não encontrada ou não autorizada.",
+    };
+  }
+  if (result.outcome === "unchanged") {
+    return {
+      success: true,
+      changed: false,
+      archived: result.archived,
+      message: result.archived
+        ? "A candidatura já estava arquivada."
+        : "A candidatura já estava ativa.",
+    };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/candidaturas");
+  revalidatePath("/dashboard/kanban");
+  revalidatePath("/dashboard/busca");
+  revalidatePath(`/dashboard/candidaturas/${parsed.data.applicationId}`);
+  return {
+    success: true,
+    changed: true,
+    archived: result.archived,
+    message: result.archived
+      ? "Candidatura arquivada com sucesso."
+      : "Candidatura restaurada com sucesso.",
+    redirectTo: result.archived
+      ? "/dashboard/candidaturas?feedback=archived"
+      : "/dashboard/candidaturas?feedback=restored",
   };
 }
 

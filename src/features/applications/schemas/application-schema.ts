@@ -74,4 +74,9 @@ export const statusUpdateSchema = z.object({
   status: z.enum(APPLICATION_STATUSES),
 });
 
+export const applicationArchiveSchema = z.object({
+  applicationId: z.uuid("Candidatura inválida."),
+  archived: z.boolean(),
+});
+
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;

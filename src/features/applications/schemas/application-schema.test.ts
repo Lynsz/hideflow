@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { applicationSchema } from "@/features/applications/schemas/application-schema";
+import {
+  applicationArchiveSchema,
+  applicationSchema,
+} from "@/features/applications/schemas/application-schema";
 
 const validApplication = {
   companyId: "11111111-1111-4111-8111-111111111111",
@@ -78,5 +81,22 @@ describe("applicationSchema", () => {
     });
 
     expect(result).not.toHaveProperty("user_id");
+  });
+});
+
+describe("applicationArchiveSchema", () => {
+  it("aceita somente UUID e estado booleano", () => {
+    expect(
+      applicationArchiveSchema.safeParse({
+        applicationId: "11111111-1111-4111-8111-111111111111",
+        archived: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      applicationArchiveSchema.safeParse({
+        applicationId: "outra-conta",
+        archived: "true",
+      }).success,
+    ).toBe(false);
   });
 });
