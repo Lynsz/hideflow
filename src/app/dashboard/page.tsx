@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CircleX,
   FileCheck2,
+  ListChecks,
   Plus,
   Send,
   Trophy,
@@ -54,10 +55,19 @@ export default async function DashboardPage() {
             Aqui está o panorama real da sua busca por emprego.
           </p>
         </div>
-        <Link href="/dashboard/candidaturas/nova" className={buttonStyles()}>
-          <Plus className="size-4" aria-hidden="true" />
-          Nova candidatura
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/prioridades"
+            className={buttonStyles({ variant: "secondary" })}
+          >
+            <ListChecks className="size-4" aria-hidden="true" />
+            Ver prioridades
+          </Link>
+          <Link href="/dashboard/candidaturas/nova" className={buttonStyles()}>
+            <Plus className="size-4" aria-hidden="true" />
+            Nova candidatura
+          </Link>
+        </div>
       </header>
 
       <section

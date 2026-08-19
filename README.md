@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 17 implementada no código — registro e comparação de propostas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 18 implementada no código — central de prioridades acionáveis, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -47,6 +47,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
 - Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
 - Registro de propostas e comparação de remuneração, bônus e condições
+- Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
 - Schema versionado com catorze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -485,6 +486,21 @@ Salvar ou excluir uma proposta não altera o status do pipeline. Candidaturas ar
 - Datas de recebimento e decisão usam o tipo civil `date`, evitando deslocamento de dia por fuso horário.
 - O equivalente anual multiplica salários mensais por 12 e soma somente o bônus informado. Benefícios, impostos, participação e moedas diferentes não são convertidos em um ranking financeiro automático.
 
+## Etapa 18: central de prioridades
+
+`/dashboard/prioridades` transforma os registros existentes em uma fila semanal de ações. A central reúne lembretes vencidos, propostas com decisão atrasada ou nos próximos sete dias, entrevistas agendadas para os próximos sete dias e candidaturas ativas sem atualização há pelo menos 14 dias. Filtros por categoria ficam na URL e preservam navegação, recarga e compartilhamento interno.
+
+As regras atribuem severidade crítica a lembretes vencidos e propostas expiradas. Propostas com até dois dias, entrevistas em até 24 horas e candidaturas paradas exigem atenção; os demais compromissos da janela ficam planejados. Uma candidatura parada não é repetida quando já possui outro item concreto na fila.
+
+### Escopo, segurança e performance
+
+- A central é somente leitura e não cria uma tabela ou estado derivado que possa ficar desatualizado.
+- Todas as consultas derivam `user_id` da sessão, repetem o filtro de ownership e continuam sob as policies RLS das tabelas de origem.
+- Candidaturas arquivadas ou em estados finais não aparecem, mesmo que ainda possuam lembretes, entrevistas ou propostas relacionadas.
+- Propostas vencidas usam uma janela retroativa de 30 dias; cada fonte lê no máximo 100 registros e a interface informa quando o limite é atingido.
+- Prazos civis de propostas permanecem no formato `date`; entrevistas e lembretes usam instantes absolutos e são exibidos no fuso do navegador.
+- A central não envia notificações, mensagens, e-mails nem altera automaticamente o pipeline.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -578,6 +594,7 @@ A suíte automatizada cobre:
 - normalização, limite e neutralização de caracteres reservados da busca global;
 - serialização JSON versionada, escaping CSV e neutralização de fórmulas de planilha;
 - filtros determinísticos da agenda, ordenação unificada e serialização iCalendar;
+- classificação, deduplicação e filtros determinísticos da central de prioridades;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -602,6 +619,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 15:** histórico manual de interações por candidatura
 - [x] **Etapa 16:** arquivamento e restauração de candidaturas
 - [x] **Etapa 17:** propostas e comparação de ofertas
+- [x] **Etapa 18:** central de prioridades acionáveis
 
 ## Licença
 
