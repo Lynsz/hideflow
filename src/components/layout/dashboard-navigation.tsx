@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CalendarClock,
   Columns3,
+  FileStack,
   LayoutDashboard,
   ListChecks,
   HandCoins,
@@ -47,6 +48,11 @@ const navigationItems: NavigationItem[] = [
     label: "Agenda",
     href: "/dashboard/agenda",
     icon: CalendarDays,
+  },
+  {
+    label: "Documentos",
+    href: "/dashboard/documentos",
+    icon: FileStack,
   },
   {
     label: "Entrevistas",

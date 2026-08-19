@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 18 implementada no código — central de prioridades acionáveis, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 19 implementada no código — biblioteca central de documentos, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -33,6 +33,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
 - Timeline agregada e auditável com criação, mudanças de status, entrevistas e interações manuais
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
+- Biblioteca central de documentos com busca, filtros, ordenação e paginação
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
 - Analytics com período/empresa, KPIs de conversão, funil, tendências, fontes, salários e cobertura dos dados
@@ -501,6 +502,20 @@ As regras atribuem severidade crítica a lembretes vencidos e propostas expirada
 - Prazos civis de propostas permanecem no formato `date`; entrevistas e lembretes usam instantes absolutos e são exibidos no fuso do navegador.
 - A central não envia notificações, mensagens, e-mails nem altera automaticamente o pipeline.
 
+## Etapa 19: biblioteca central de documentos
+
+`/dashboard/documentos` reúne os arquivos privados de todas as candidaturas do usuário. A busca encontra o nome de exibição, o nome original, a vaga ou a empresa; os filtros combinam tipo de documento, empresa e situação de arquivamento da candidatura. A ordenação e a paginação de 12 itens também ficam na URL, preservando recarga e navegação.
+
+Visualização, download, renomeação e exclusão reutilizam as Server Actions da candidatura. A listagem recebe somente os metadados necessários; o `storage_path` permanece no servidor e cada acesso gera uma URL assinada válida por 60 segundos apenas após o clique. A exclusão continua removendo primeiro o objeto do Storage e depois o registro.
+
+### Escopo, segurança e performance
+
+- Todas as consultas derivam `user_id` da sessão, repetem o filtro de ownership e permanecem protegidas por RLS.
+- A relação interna com a candidatura impede documentos órfãos ou pertencentes a outra conta; uploads continuam no detalhe da candidatura para manter esse vínculo explícito.
+- A busca relacionada limita a 100 resultados cada consulta auxiliar de vagas, empresas e candidaturas. A consulta final mantém contagem exata e paginação no banco.
+- Conteúdo de PDF ou DOCX não é lido nem indexado, e URLs assinadas nunca são persistidas.
+- A etapa reutiliza a tabela `documents` e o bucket privado existentes; não exige migration, tabela ou variável de ambiente adicional.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -595,6 +610,7 @@ A suíte automatizada cobre:
 - serialização JSON versionada, escaping CSV e neutralização de fórmulas de planilha;
 - filtros determinísticos da agenda, ordenação unificada e serialização iCalendar;
 - classificação, deduplicação e filtros determinísticos da central de prioridades;
+- normalização segura, defaults e URLs determinísticas da biblioteca de documentos;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -620,6 +636,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 16:** arquivamento e restauração de candidaturas
 - [x] **Etapa 17:** propostas e comparação de ofertas
 - [x] **Etapa 18:** central de prioridades acionáveis
+- [x] **Etapa 19:** biblioteca central de documentos
 
 ## Licença
 

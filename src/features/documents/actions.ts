@@ -34,6 +34,7 @@ export type DocumentActionResult = {
 
 function refreshApplication(applicationId: string) {
   revalidatePath(`/dashboard/candidaturas/${applicationId}`);
+  revalidatePath("/dashboard/documentos");
 }
 
 export async function uploadDocument(

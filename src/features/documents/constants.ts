@@ -3,6 +3,8 @@ import type { DocumentType } from "@/types/database";
 export const DOCUMENT_BUCKET = "application-documents";
 export const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
 export const SIGNED_URL_TTL_SECONDS = 60;
+export const DOCUMENT_LIBRARY_PAGE_SIZE = 12;
+export const DOCUMENT_LIBRARY_RELATED_SEARCH_LIMIT = 100;
 
 export const PDF_MIME_TYPE = "application/pdf";
 export const DOCX_MIME_TYPE =
