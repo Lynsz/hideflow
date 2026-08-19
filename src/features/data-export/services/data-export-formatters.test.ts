@@ -92,6 +92,7 @@ const snapshot: UserDataSnapshot = {
       created_at: "2026-08-01T00:00:00.000Z",
     },
   ],
+  applicationActivities: [],
 };
 
 describe("isDataExportFormat", () => {
@@ -127,7 +128,7 @@ describe("export formatters", () => {
     );
     const parsed = JSON.parse(serializeJsonExport(result));
 
-    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.schemaVersion).toBe(2);
     expect(parsed.account.email).toBe("ana@example.com");
     expect(parsed.data.applications).toHaveLength(1);
   });

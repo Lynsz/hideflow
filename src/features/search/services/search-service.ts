@@ -21,6 +21,8 @@ const DOCUMENT_SELECT =
 const TECHNOLOGY_SELECT = "id, name" as const;
 const TECHNOLOGY_LINK_SELECT =
   "technology_id, application:applications!application_technologies_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name)), technology:technologies!application_technologies_technology_owner_fkey(id, name)" as const;
+const ACTIVITY_SELECT =
+  "id, title, notes, application:applications!application_activities_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name))" as const;
 
 function joinDescription(...parts: Array<string | null | undefined>) {
   return parts.filter(Boolean).join(" · ");
@@ -58,6 +60,7 @@ export async function searchWorkspace(
     reminders,
     documents,
     technologies,
+    activities,
   ] = await Promise.all([
     supabase
       .from("companies")
@@ -105,6 +108,13 @@ export async function searchWorkspace(
       .ilike("name", `%${query}%`)
       .order("name")
       .limit(SEARCH_RESULT_LIMIT),
+    supabase
+      .from("application_activities")
+      .select(ACTIVITY_SELECT)
+      .eq("user_id", userId)
+      .or(`title.ilike.${pattern},notes.ilike.${pattern}`)
+      .order("occurred_at", { ascending: false })
+      .limit(SEARCH_RESULT_LIMIT),
   ]);
 
   if (
@@ -113,7 +123,8 @@ export async function searchWorkspace(
     contacts.error ||
     reminders.error ||
     documents.error ||
-    technologies.error
+    technologies.error ||
+    activities.error
   ) {
     throw new Error("Não foi possível concluir a busca global.");
   }
@@ -204,6 +215,16 @@ export async function searchWorkspace(
     ),
     href: `/dashboard/candidaturas/${link.application.id}`,
   }));
+  const activityItems = activities.data.map((activity) => ({
+    id: activity.id,
+    kind: "activity" as const,
+    title: activity.title,
+    description: joinDescription(
+      activity.application.job_title,
+      activity.application.company.name,
+    ),
+    href: `/dashboard/candidaturas/${activity.application.id}`,
+  }));
 
   return createResponse([
     { kind: "application", label: "Candidaturas", items: applicationItems },
@@ -212,5 +233,6 @@ export async function searchWorkspace(
     { kind: "reminder", label: "Lembretes", items: reminderItems },
     { kind: "document", label: "Documentos", items: documentItems },
     { kind: "technology", label: "Tecnologias", items: technologyItems },
+    { kind: "activity", label: "Interações", items: activityItems },
   ]);
 }

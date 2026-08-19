@@ -6,6 +6,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { FormFeedback } from "@/components/ui/form-feedback";
 import { LocalDateTime } from "@/components/ui/local-date-time";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
+import { ActivityForm } from "@/features/activities/components/activity-form";
 import { DeleteApplicationButton } from "@/features/applications/components/application-actions";
 import { ApplicationTimeline } from "@/features/applications/components/application-timeline";
 import { StatusSelect } from "@/features/applications/components/status-select";
@@ -78,6 +79,7 @@ export default async function ApplicationDetailPage({
     application.created_at,
     application.history,
     application.interviewEvents,
+    application.activities,
   );
   const now = new Date().toISOString();
 
@@ -333,9 +335,19 @@ export default async function ApplicationDetailPage({
       </section>
 
       <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
+        <div>
+          <h2 className="font-medium">Registrar interação</h2>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Anote manualmente contatos e acontecimentos deste processo.
+          </p>
+        </div>
+        <ActivityForm applicationId={application.id} defaultOccurredAt={now} />
+      </section>
+
+      <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
         <h2 className="font-medium">Timeline</h2>
         <p className="text-muted-foreground mt-1 text-xs">
-          Eventos mais recentes primeiro.
+          Status, entrevistas e interações mais recentes primeiro.
         </p>
         <ApplicationTimeline events={timeline} />
       </section>

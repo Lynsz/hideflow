@@ -17,6 +17,7 @@ export type UserDataSnapshot = {
   reminders: ExportTableRow<"reminders">[];
   technologies: ExportTableRow<"technologies">[];
   applicationTechnologies: ExportTableRow<"application_technologies">[];
+  applicationActivities: ExportTableRow<"application_activities">[];
 };
 
 export type UserDataExport = {

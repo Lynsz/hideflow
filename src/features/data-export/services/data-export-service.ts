@@ -211,6 +211,18 @@ export async function getAuthenticatedUserDataExport(): Promise<{
     }
     return request;
   });
+  const applicationActivitiesRequest = fetchAllById<
+    ExportTableRow<"application_activities">
+  >((cursor) => {
+    let request = supabase
+      .from("application_activities")
+      .select("*")
+      .eq("user_id", userId)
+      .order("id")
+      .limit(DATA_EXPORT_PAGE_SIZE);
+    if (cursor) request = request.gt("id", cursor);
+    return request;
+  });
 
   const [
     profile,
@@ -225,6 +237,7 @@ export async function getAuthenticatedUserDataExport(): Promise<{
     reminders,
     technologies,
     applicationTechnologies,
+    applicationActivities,
   ] = await Promise.all([
     profileRequest,
     companiesRequest,
@@ -238,6 +251,7 @@ export async function getAuthenticatedUserDataExport(): Promise<{
     remindersRequest,
     technologiesRequest,
     applicationTechnologiesRequest,
+    applicationActivitiesRequest,
   ]);
 
   if (profile.error || !profile.data) {
@@ -259,6 +273,7 @@ export async function getAuthenticatedUserDataExport(): Promise<{
       reminders,
       technologies,
       applicationTechnologies,
+      applicationActivities,
     },
   };
 }

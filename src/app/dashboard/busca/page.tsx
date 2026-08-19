@@ -4,6 +4,7 @@ import {
   Building2,
   Code2,
   FileText,
+  MessageSquareText,
   Search,
   Users,
 } from "lucide-react";
@@ -35,6 +36,7 @@ const RESULT_ICONS: Record<SearchResultKind, LucideIcon> = {
   reminder: BellRing,
   document: FileText,
   technology: Code2,
+  activity: MessageSquareText,
 };
 
 const SEARCHABLE_AREAS = [
@@ -44,6 +46,7 @@ const SEARCHABLE_AREAS = [
   "lembretes",
   "documentos",
   "tecnologias",
+  "interações",
 ] as const;
 
 function SearchResultGroup({ group }: { group: GlobalSearchGroup }) {
@@ -133,7 +136,7 @@ export default async function SearchPage({
               minLength={SEARCH_QUERY_MIN_LENGTH}
               maxLength={SEARCH_QUERY_MAX_LENGTH}
               className={`${inputStyles} h-11 pl-10`}
-              placeholder="Vaga, empresa, contato, tecnologia..."
+              placeholder="Vaga, empresa, contato, interação..."
               autoComplete="off"
               autoFocus
             />
@@ -188,7 +191,7 @@ export default async function SearchPage({
         <div className="border-border bg-surface mt-8 rounded-xl border">
           <EmptyState
             title={`Nenhum resultado para “${queryState.query}”`}
-            description="Tente outro nome, cargo, empresa, arquivo ou tecnologia."
+            description="Tente outro nome, cargo, empresa, arquivo, tecnologia ou interação."
           />
         </div>
       ) : (

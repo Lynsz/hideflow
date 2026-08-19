@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 14 implementada no código — agenda unificada e exportação para calendários, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 15 implementada no código — histórico manual de interações por candidatura, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -31,7 +31,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Mudança otimista de status com rollback em falhas e proteção contra conflitos entre abas
 - CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
-- Timeline agregada e auditável com criação, mudanças de status e eventos de entrevista
+- Timeline agregada e auditável com criação, mudanças de status, entrevistas e interações manuais
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas e candidaturas recentes reais
@@ -40,11 +40,12 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Resumo de pendências e próximo follow-up no dashboard
 - Tecnologias estruturadas, reutilizáveis e normalizadas por usuário
 - Ranking de tecnologias e cobertura das tags no Analytics
-- Busca global por candidaturas, empresas, contatos, lembretes, documentos e tecnologias
+- Busca global por candidaturas, empresas, contatos, lembretes, documentos, tecnologias e interações
 - Navegação rápida para a busca com `Ctrl+K` ou `Cmd+K`
 - Backup JSON dos registros privados e exportação CSV das candidaturas
 - Agenda unificada de entrevistas e lembretes com download em iCalendar
-- Schema versionado com doze tabelas, RLS, índices e constraints
+- Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
+- Schema versionado com treze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -248,7 +249,7 @@ Além do histórico, a migration da Etapa 3:
 
 ### Timeline e auditoria
 
-A timeline usa fontes especializadas em vez de uma tabela genérica com JSON: deriva a criação de `applications.created_at`, lê mudanças de status em `application_history` e eventos imutáveis de entrevistas em `interview_events`. O trigger `interviews_record_event` registra criação, reagendamento e transições de resultado sem duplicar o reagendamento quando data e resultado mudam juntos. A UI agrega e ordena tudo do evento mais recente para o mais antigo, com desempate determinístico.
+A timeline usa fontes especializadas em vez de uma tabela genérica com JSON: deriva a criação de `applications.created_at`, lê mudanças de status em `application_history`, eventos imutáveis de entrevistas em `interview_events` e interações explícitas em `application_activities`. O trigger `interviews_record_event` registra criação, reagendamento e transições de resultado sem duplicar o reagendamento quando data e resultado mudam juntos. A UI agrega e ordena tudo do evento mais recente para o mais antigo, com desempate determinístico.
 
 ### Tipos, constraints e índices
 
@@ -411,7 +412,7 @@ As categorias são consultadas em paralelo e exibem no máximo seis itens cada. 
 
 ## Etapa 13: exportação e portabilidade dos dados
 
-A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, eventos, histórico, metadados de documentos, lembretes e tecnologias. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
+A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, eventos, histórico, metadados de documentos, lembretes, tecnologias e interações manuais. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
 
 Os dados são lidos em páginas de 500 registros usando cursores determinísticos, evitando o limite padrão de linhas da Data API. As tabelas são carregadas em paralelo e cada sequência avança pela chave primária. Como não existe uma transação única entre todas as consultas HTTP, alterações feitas durante o download podem aparecer apenas parcialmente no arquivo; recomenda-se evitar edições simultâneas durante backups grandes.
 
@@ -440,17 +441,31 @@ O recorte usa instantes absolutos no servidor, enquanto os componentes de data e
 - A resposta usa `private, no-store`, `nosniff` e download por `Content-Disposition`; nenhum calendário é salvo no servidor.
 - Não existe sincronização automática, OAuth com calendários externos, envio de convites ou atualização bidirecional nesta etapa.
 
+## Etapa 15: histórico manual de interações
+
+Os detalhes de cada candidatura permitem registrar anotações, e-mails, ligações, contatos pelo LinkedIn e outras interações. Cada registro guarda título, detalhes opcionais e o instante em que aconteceu; a data local do dispositivo é convertida para ISO 8601 antes de chegar à Server Action. As interações entram na timeline unificada e na busca global, além de fazerem parte do backup JSON versionado com schema 2.
+
+### Segurança e escopo
+
+- A sessão SSR fornece o `user_id`; o cliente envia somente a candidatura, o tipo e o conteúdo validado.
+- A FK composta `(application_id, user_id)` impede vincular uma interação a uma candidatura de outra conta, mesmo fora da interface.
+- RLS concede apenas `SELECT`, `INSERT` e `DELETE` ao proprietário; não há edição silenciosa de um registro existente.
+- Título, tipo, UUID, data e limites de texto são validados novamente na Server Action, e as consultas repetem o filtro de ownership.
+- O recurso apenas documenta ações realizadas pelo usuário. Não envia e-mails, mensagens no LinkedIn, ligações ou follow-ups automáticos.
+- Exclusões exigem confirmação na interface. O backup continua sendo o mecanismo disponível para portabilidade e retenção externa.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
 
 - `profiles`: somente `SELECT` e `UPDATE` do próprio `id`.
-- Demais tabelas: `SELECT`, `INSERT`, `UPDATE` e `DELETE` somente quando `user_id = (select auth.uid())`.
+- Demais tabelas recebem apenas as operações necessárias e sempre exigem `user_id = (select auth.uid())`.
 - Updates possuem `USING` e `WITH CHECK`.
 - Inserts não aceitam `user_id` de terceiros.
 - FKs compostas reforçam a propriedade também nos relacionamentos.
 - `anon` não recebe privilégios sobre as tabelas privadas.
 - `application_history` e `interview_events` são append-only para clientes; somente triggers internos registram eventos.
+- `application_activities` não concede `UPDATE`; interações manuais podem ser criadas, lidas ou excluídas pelo proprietário.
 - A função privilegiada de criação de profile fica no schema não exposto `private`, usa `search_path = ''` e não pode ser executada diretamente pelos clientes.
 
 Metadados editáveis do usuário são usados apenas para o nome de exibição, nunca para autorização.
@@ -524,6 +539,7 @@ A suíte automatizada cobre:
 - normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
 - schema de lembretes, limites de texto e datas ISO;
+- schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - normalização dos filtros de lembretes e classificação determinística entre próximo, atrasado e concluído;
 - normalização, limites e identificadores de tecnologias vinculadas;
 - ranking de tecnologias por candidatura e cobertura das tags dentro do recorte analítico;
@@ -551,6 +567,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 12:** busca global privada e navegação rápida
 - [x] **Etapa 13:** exportação e portabilidade dos dados
 - [x] **Etapa 14:** agenda unificada e exportação iCalendar
+- [x] **Etapa 15:** histórico manual de interações por candidatura
 
 ## Licença
 

@@ -55,6 +55,9 @@ export type SupportedCurrency = "BRL" | "USD" | "EUR";
 
 export type AnalyticsPeriod = "3m" | "6m" | "12m" | "all";
 
+export type ApplicationActivityType =
+  "note" | "email" | "phone_call" | "linkedin" | "other";
+
 type Timestamp = string;
 
 export type Database = {
@@ -359,6 +362,40 @@ export type Database = {
           },
         ];
       };
+      application_activities: {
+        Row: {
+          id: string;
+          user_id: string;
+          application_id: string;
+          activity_type: ApplicationActivityType;
+          title: string;
+          notes: string | null;
+          occurred_at: Timestamp;
+          created_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          application_id: string;
+          activity_type: ApplicationActivityType;
+          title: string;
+          notes?: string | null;
+          occurred_at: Timestamp;
+          created_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["application_activities"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "application_activities_application_owner_fkey";
+            columns: ["application_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       documents: {
         Row: {
           id: string;
@@ -486,6 +523,7 @@ export type Database = {
     Functions: Record<string, never>;
     Enums: {
       application_status: ApplicationStatus;
+      application_activity_type: ApplicationActivityType;
     };
     CompositeTypes: Record<string, never>;
   };
