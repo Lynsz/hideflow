@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 19 implementada no código — biblioteca central de documentos, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 20 implementada no código — importação CSV segura de candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -44,6 +44,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Busca global por candidaturas, empresas, contatos, lembretes, documentos, tecnologias, interações e propostas
 - Navegação rápida para a busca com `Ctrl+K` ou `Cmd+K`
 - Backup JSON dos registros privados e exportação CSV das candidaturas
+- Importação CSV com prévia, validação, deduplicação e transação atômica
 - Agenda unificada de entrevistas e lembretes com download em iCalendar
 - Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
 - Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
@@ -428,7 +429,7 @@ Os dados são lidos em páginas de 500 registros usando cursores determinístico
 - Valores CSV iniciados por caracteres de fórmula são neutralizados para evitar execução ao abrir o arquivo em uma planilha.
 - Os arquivos são montados em memória, enviados diretamente na resposta e não são persistidos no servidor ou no Storage.
 - O JSON inclui o `storage_path` e outros metadados dos documentos, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves.
-- O recurso é somente de exportação; restauração e importação automática não fazem parte desta etapa.
+- A restauração completa do backup JSON não faz parte desta etapa; a importação controlada do CSV de candidaturas é descrita na Etapa 20.
 
 ## Etapa 14: agenda unificada e iCalendar
 
@@ -516,6 +517,21 @@ Visualização, download, renomeação e exclusão reutilizam as Server Actions 
 - Conteúdo de PDF ou DOCX não é lido nem indexado, e URLs assinadas nunca são persistidas.
 - A etapa reutiliza a tabela `documents` e o bucket privado existentes; não exige migration, tabela ou variável de ambiente adicional.
 
+## Etapa 20: importação CSV segura de candidaturas
+
+A seção de configurações aceita o mesmo CSV UTF-8 exportado pelo HireFlow. O usuário seleciona o arquivo, recebe uma prévia das primeiras oito linhas e precisa confirmar antes de qualquer escrita. A confirmação reabre e revalida o arquivo no servidor, portanto a prévia não funciona como autorização para conteúdo alterado.
+
+Empresa, vaga, status, modalidade, contrato, localização, salários, moeda, data, fonte, URL e tecnologias são importados. IDs e timestamps do arquivo são ignorados e novos UUIDs são gerados pelo banco. Empresas e tecnologias já existentes na mesma conta são reutilizadas; uma candidatura com a mesma empresa, vaga e data é tratada como duplicada e não é atualizada ou mesclada silenciosamente.
+
+### Transação, segurança e limites
+
+- O parser suporta células entre aspas, vírgulas, aspas escapadas, quebras de linha, delimitadores escapados nas tecnologias e o prefixo usado para neutralizar fórmulas na exportação.
+- Arquivos são limitados a 1 MiB, 200 candidaturas e 20 tecnologias por linha. Cabeçalho, enums, URLs HTTP(S), datas civis e faixas salariais são validados antes da chamada ao banco.
+- A função `import_applications_csv(jsonb)` usa `SECURITY INVOKER`, deriva o proprietário de `auth.uid()` e executa sob as policies RLS existentes; `anon` não recebe `EXECUTE`.
+- Todo o lote é processado em uma única transação PostgreSQL. Um erro desfaz empresas, candidaturas e vínculos criados naquela confirmação.
+- Nenhum `user_id`, ID de empresa ou ID de tecnologia vindo do CSV é aceito como autoridade. Service Role não é utilizada.
+- A migration é `20260820214203_implement_stage_20_csv_application_import.sql`; o teste pgTAP cobre execução autorizada, isolamento entre dois usuários, deduplicação e limite do lote.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -550,6 +566,7 @@ Metadados editáveis do usuário são usados apenas para o nome de exibição, n
 | `npm run db:start`     | Inicia Supabase local                     |
 | `npm run db:reset`     | Recria o banco local aplicando migrations |
 | `npm run db:lint`      | Analisa o banco local                     |
+| `npm run db:test`      | Executa os testes pgTAP do banco local    |
 | `npm run db:push`      | Aplica migrations ao projeto vinculado    |
 | `npm run db:types`     | Regenera os tipos do banco                |
 
@@ -611,6 +628,8 @@ A suíte automatizada cobre:
 - filtros determinísticos da agenda, ordenação unificada e serialização iCalendar;
 - classificação, deduplicação e filtros determinísticos da central de prioridades;
 - normalização segura, defaults e URLs determinísticas da biblioteca de documentos;
+- parsing CSV, campos escapados, validação e normalização da importação;
+- importação transacional, deduplicação e isolamento entre usuários em pgTAP;
 - smoke tests públicos em Chromium desktop e mobile;
 - redirecionamento de visitante em rota protegida e resposta mínima do liveness.
 
@@ -637,6 +656,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 17:** propostas e comparação de ofertas
 - [x] **Etapa 18:** central de prioridades acionáveis
 - [x] **Etapa 19:** biblioteca central de documentos
+- [x] **Etapa 20:** importação CSV segura de candidaturas
 
 ## Licença
 

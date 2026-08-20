@@ -32,6 +32,12 @@ export function encodeCsvCell(value: unknown) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
+export function encodeTechnologyList(names: string[]) {
+  return names
+    .map((name) => name.replaceAll("\\", "\\\\").replaceAll("|", "\\|"))
+    .join(" | ");
+}
+
 export function buildUserDataExport(
   email: string,
   snapshot: UserDataSnapshot,
@@ -80,9 +86,11 @@ export function serializeApplicationsCsv(snapshot: UserDataSnapshot) {
     application.applied_at,
     application.source,
     application.job_url,
-    (applicationTechnologies.get(application.id) ?? [])
-      .toSorted((left, right) => left.localeCompare(right, "pt-BR"))
-      .join(" | "),
+    encodeTechnologyList(
+      (applicationTechnologies.get(application.id) ?? []).toSorted(
+        (left, right) => left.localeCompare(right, "pt-BR"),
+      ),
+    ),
     application.created_at,
     application.updated_at,
   ]);

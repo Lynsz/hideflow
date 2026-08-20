@@ -5,6 +5,7 @@ import {
   buildExportFilename,
   buildUserDataExport,
   encodeCsvCell,
+  encodeTechnologyList,
   serializeApplicationsCsv,
   serializeJsonExport,
 } from "@/features/data-export/services/data-export-formatters";
@@ -119,6 +120,14 @@ describe("encodeCsvCell", () => {
       expect(encodeCsvCell(value)).toBe(`"'${value}"`);
     },
   );
+});
+
+describe("encodeTechnologyList", () => {
+  it("escapa o delimitador e a barra sem perder nomes válidos", () => {
+    expect(encodeTechnologyList(["Node|Bun", "C\\C"])).toBe(
+      "Node\\|Bun | C\\\\C",
+    );
+  });
 });
 
 describe("export formatters", () => {

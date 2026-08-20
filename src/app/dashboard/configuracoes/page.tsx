@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { DataExportPanel } from "@/features/data-export/components/data-export-panel";
+import { DataImportPanel } from "@/features/data-import/components/data-import-panel";
 import {
   ChangePasswordForm,
   PreferencesForm,
@@ -40,6 +41,7 @@ export default async function SettingsPage() {
         <ChangePasswordForm />
       </div>
       <DataExportPanel />
+      <DataImportPanel />
     </main>
   );
 }

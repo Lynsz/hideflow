@@ -1,3 +1,11 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 export type ApplicationStatus =
   | "saved"
   | "applied"
@@ -570,7 +578,12 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      import_applications_csv: {
+        Args: { p_rows: Json };
+        Returns: Json;
+      };
+    };
     Enums: {
       application_status: ApplicationStatus;
       application_activity_type: ApplicationActivityType;
