@@ -14,6 +14,7 @@ import {
   Search,
   Settings,
   SquareKanban,
+  Target,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -28,6 +29,7 @@ import type { NavigationItem } from "@/types/navigation";
 const navigationItems: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Prioridades", href: "/dashboard/prioridades", icon: ListChecks },
+  { label: "Metas", href: "/dashboard/metas", icon: Target },
   { label: "Busca", href: "/dashboard/busca", icon: Search },
   {
     label: "Candidaturas",

@@ -80,6 +80,9 @@ export type Database = {
           avatar_url: string | null;
           default_currency: SupportedCurrency;
           analytics_period: AnalyticsPeriod;
+          weekly_application_target: number;
+          weekly_follow_up_target: number;
+          weekly_outreach_target: number;
           created_at: Timestamp;
           updated_at: Timestamp;
         };
@@ -89,6 +92,9 @@ export type Database = {
           avatar_url?: string | null;
           default_currency?: SupportedCurrency;
           analytics_period?: AnalyticsPeriod;
+          weekly_application_target?: number;
+          weekly_follow_up_target?: number;
+          weekly_outreach_target?: number;
           created_at?: Timestamp;
           updated_at?: Timestamp;
         };
@@ -97,6 +103,9 @@ export type Database = {
           avatar_url?: string | null;
           default_currency?: SupportedCurrency;
           analytics_period?: AnalyticsPeriod;
+          weekly_application_target?: number;
+          weekly_follow_up_target?: number;
+          weekly_outreach_target?: number;
           updated_at?: Timestamp;
         };
         Relationships: [];

@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 20 implementada no código — importação CSV segura de candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 21 implementada no código — metas de produtividade e comparação do ritmo de busca, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -50,6 +50,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
 - Registro de propostas e comparação de remuneração, bônus e condições
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
+- Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
 - Schema versionado com catorze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -428,7 +429,7 @@ Os dados são lidos em páginas de 500 registros usando cursores determinístico
 - As respostas usam `private, no-store`, `nosniff` e `Content-Disposition: attachment`.
 - Valores CSV iniciados por caracteres de fórmula são neutralizados para evitar execução ao abrir o arquivo em uma planilha.
 - Os arquivos são montados em memória, enviados diretamente na resposta e não são persistidos no servidor ou no Storage.
-- O JSON inclui o `storage_path` e outros metadados dos documentos, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves.
+- O JSON inclui o `storage_path`, as metas do profile e outros metadados dos documentos, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão das metas avança o formato para o schema 5.
 - A restauração completa do backup JSON não faz parte desta etapa; a importação controlada do CSV de candidaturas é descrita na Etapa 20.
 
 ## Etapa 14: agenda unificada e iCalendar
@@ -532,6 +533,22 @@ Empresa, vaga, status, modalidade, contrato, localização, salários, moeda, da
 - Nenhum `user_id`, ID de empresa ou ID de tecnologia vindo do CSV é aceito como autoridade. Service Role não é utilizada.
 - A migration é `20260820214203_implement_stage_20_csv_application_import.sql`; o teste pgTAP cobre execução autorizada, isolamento entre dois usuários, deduplicação e limite do lote.
 
+## Etapa 21: metas de produtividade e ritmo de busca
+
+`/dashboard/metas` acompanha três comportamentos configuráveis: candidaturas com data de envio, lembretes concluídos e contatos registrados como e-mail, ligação ou LinkedIn. Cada cartão compara a janela atual — hoje e os seis dias anteriores — com os sete dias imediatamente anteriores, mostra o progresso e oferece um atalho para registrar a próxima ação.
+
+As metas ficam no profile privado e aceitam valores inteiros de 0 a 100. Zero pausa apenas o alvo visual; nenhum registro histórico é apagado. Os resultados são sempre derivados das tabelas operacionais existentes, portanto não há snapshot, tabela agregada ou contador que possa divergir silenciosamente dos dados de origem.
+
+### Escopo, segurança e consistência
+
+- A página é um Server Component e consulta somente contagens; registros individuais e detalhes privados não atravessam a fronteira do cliente.
+- A Server Action revalida os valores, deriva o usuário da sessão e atualiza somente o profile correspondente. A policy RLS existente continua impondo `id = auth.uid()`.
+- Privilégios de coluna permitem alterar apenas nome, preferências e metas; identidade, avatar e timestamps continuam protegidos contra update pela Data API.
+- As duas janelas usam limites civis em UTC para produzir resultados determinísticos no servidor. Candidaturas usam `applied_at`; follow-ups e contatos usam seus timestamps de conclusão ou ocorrência.
+- Candidaturas arquivadas continuam contando o esforço realizado. A página não dispara e-mails, mensagens, notificações nem mudanças automáticas no pipeline.
+- A migration `20260823181921_implement_stage_21_productivity_goals.sql` adiciona constraints e índices para as novas consultas. O teste pgTAP cobre defaults, limites, privilégios e isolamento entre dois usuários.
+- O backup JSON passa ao schema 5 porque o registro de profile agora inclui as três metas.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -617,6 +634,7 @@ A suíte automatizada cobre:
 - validação de perfil, preferências e alteração de senha;
 - normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
+- validação, janelas civis consecutivas e progresso das metas de produtividade;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -657,6 +675,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 18:** central de prioridades acionáveis
 - [x] **Etapa 19:** biblioteca central de documentos
 - [x] **Etapa 20:** importação CSV segura de candidaturas
+- [x] **Etapa 21:** metas de produtividade e comparação do ritmo de busca
 
 ## Licença
 

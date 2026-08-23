@@ -18,6 +18,9 @@ const snapshot: UserDataSnapshot = {
     avatar_url: null,
     default_currency: "BRL",
     analytics_period: "6m",
+    weekly_application_target: 5,
+    weekly_follow_up_target: 3,
+    weekly_outreach_target: 3,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
@@ -139,7 +142,7 @@ describe("export formatters", () => {
     );
     const parsed = JSON.parse(serializeJsonExport(result));
 
-    expect(parsed.schemaVersion).toBe(4);
+    expect(parsed.schemaVersion).toBe(5);
     expect(parsed.account.email).toBe("ana@example.com");
     expect(parsed.data.applications).toHaveLength(1);
   });
