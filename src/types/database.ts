@@ -310,6 +310,44 @@ export type Database = {
           },
         ];
       };
+      interview_preparations: {
+        Row: {
+          id: string;
+          user_id: string;
+          interview_id: string;
+          company_research: string | null;
+          role_alignment: string | null;
+          star_stories: string | null;
+          questions_to_ask: string | null;
+          logistics_notes: string | null;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          interview_id: string;
+          company_research?: string | null;
+          role_alignment?: string | null;
+          star_stories?: string | null;
+          questions_to_ask?: string | null;
+          logistics_notes?: string | null;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["interview_preparations"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "interview_preparations_interview_owner_fkey";
+            columns: ["interview_id", "user_id"];
+            isOneToOne: true;
+            referencedRelation: "interviews";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       interview_events: {
         Row: {
           id: string;

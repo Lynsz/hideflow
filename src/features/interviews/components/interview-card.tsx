@@ -1,4 +1,4 @@
-import { ExternalLink, Pencil } from "lucide-react";
+import { ClipboardCheck, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 
 import { buttonStyles } from "@/components/ui/button";
@@ -53,6 +53,13 @@ export function InterviewCard({ interview }: { interview: InterviewListItem }) {
             className={buttonStyles({ variant: "ghost", size: "sm" })}
           >
             Candidatura
+          </Link>
+          <Link
+            href={`/dashboard/entrevistas/${interview.id}/preparacao`}
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
+          >
+            <ClipboardCheck className="size-3.5" aria-hidden="true" />
+            Preparar
           </Link>
           <Link
             href={`/dashboard/entrevistas/${interview.id}/editar`}

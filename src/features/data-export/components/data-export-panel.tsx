@@ -7,7 +7,7 @@ const EXPORT_OPTIONS = [
     format: "json",
     title: "Backup completo",
     description:
-      "Perfil e registros das 14 tabelas privadas em um arquivo JSON versionado.",
+      "Perfil e registros das 15 tabelas privadas em um arquivo JSON versionado.",
     action: "Baixar JSON",
     icon: FileJson,
   },

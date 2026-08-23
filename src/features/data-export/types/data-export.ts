@@ -11,6 +11,7 @@ export type UserDataSnapshot = {
   contacts: ExportTableRow<"contacts">[];
   applicationContacts: ExportTableRow<"application_contacts">[];
   interviews: ExportTableRow<"interviews">[];
+  interviewPreparations: ExportTableRow<"interview_preparations">[];
   interviewEvents: ExportTableRow<"interview_events">[];
   applicationHistory: ExportTableRow<"application_history">[];
   documents: ExportTableRow<"documents">[];

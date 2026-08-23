@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 21 implementada no código — metas de produtividade e comparação do ritmo de busca, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 22 implementada no código — preparação estruturada de entrevistas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -31,6 +31,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Mudança otimista de status com rollback em falhas e proteção contra conflitos entre abas
 - CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
+- Preparação estruturada por entrevista com pesquisa, histórias, perguntas e logística
 - Timeline agregada e auditável com criação, mudanças de status, entrevistas e interações manuais
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Biblioteca central de documentos com busca, filtros, ordenação e paginação
@@ -51,7 +52,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Registro de propostas e comparação de remuneração, bônus e condições
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
 - Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
-- Schema versionado com catorze tabelas, RLS, índices e constraints
+- Schema versionado com quinze tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -163,6 +164,7 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 | `applications`             | Candidaturas e estágio do processo                             |
 | `contacts`                 | Contatos vinculados a empresas                                 |
 | `interviews`               | Entrevistas vinculadas a candidaturas                          |
+| `interview_preparations`   | Preparação privada e estruturada de cada entrevista            |
 | `application_contacts`     | Associação muitos-para-muitos entre candidaturas e contatos    |
 | `application_history`      | Histórico de mudanças de status                                |
 | `interview_events`         | Eventos append-only da evolução das entrevistas                |
@@ -170,6 +172,8 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 | `reminders`                | Follow-ups e tarefas com prazo vinculados às candidaturas      |
 | `technologies`             | Catálogo privado e normalizado de tecnologias do usuário       |
 | `application_technologies` | Associação muitos-para-muitos entre candidaturas e tecnologias |
+| `application_activities`   | Interações manuais registradas por candidatura                 |
+| `application_offers`       | Propostas recebidas e condições de remuneração                 |
 
 Todas as chaves são UUID. FKs compostas com `user_id` impedem que registros de um usuário sejam relacionados aos de outro usuário. Exclusões de usuário propagam por `ON DELETE CASCADE`; exclusões de candidaturas também removem seus registros dependentes. Empresas com candidaturas não podem ser removidas antes de desvincular ou tratar essas candidaturas.
 
@@ -418,7 +422,7 @@ As categorias são consultadas em paralelo e exibem no máximo seis itens cada. 
 
 ## Etapa 13: exportação e portabilidade dos dados
 
-A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, eventos, histórico, metadados de documentos, lembretes, tecnologias, interações manuais e propostas. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
+A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, preparações, eventos, histórico, metadados de documentos, lembretes, tecnologias, interações manuais e propostas. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
 
 Os dados são lidos em páginas de 500 registros usando cursores determinísticos, evitando o limite padrão de linhas da Data API. As tabelas são carregadas em paralelo e cada sequência avança pela chave primária. Como não existe uma transação única entre todas as consultas HTTP, alterações feitas durante o download podem aparecer apenas parcialmente no arquivo; recomenda-se evitar edições simultâneas durante backups grandes.
 
@@ -429,7 +433,7 @@ Os dados são lidos em páginas de 500 registros usando cursores determinístico
 - As respostas usam `private, no-store`, `nosniff` e `Content-Disposition: attachment`.
 - Valores CSV iniciados por caracteres de fórmula são neutralizados para evitar execução ao abrir o arquivo em uma planilha.
 - Os arquivos são montados em memória, enviados diretamente na resposta e não são persistidos no servidor ou no Storage.
-- O JSON inclui o `storage_path`, as metas do profile e outros metadados dos documentos, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão das metas avança o formato para o schema 5.
+- O JSON inclui o `storage_path`, as metas do profile, as preparações de entrevista e outros metadados privados, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão das preparações avança o formato para o schema 6.
 - A restauração completa do backup JSON não faz parte desta etapa; a importação controlada do CSV de candidaturas é descrita na Etapa 20.
 
 ## Etapa 14: agenda unificada e iCalendar
@@ -549,6 +553,20 @@ As metas ficam no profile privado e aceitam valores inteiros de 0 a 100. Zero pa
 - A migration `20260823181921_implement_stage_21_productivity_goals.sql` adiciona constraints e índices para as novas consultas. O teste pgTAP cobre defaults, limites, privilégios e isolamento entre dois usuários.
 - O backup JSON passa ao schema 5 porque o registro de profile agora inclui as três metas.
 
+## Etapa 22: preparação estruturada de entrevistas
+
+Cada entrevista possui um espaço próprio em `/dashboard/entrevistas/[id]/preparacao`, acessível tanto pela agenda de entrevistas quanto pelo detalhe da candidatura. A preparação organiza pesquisa da empresa, aderência à vaga, histórias no formato STAR, perguntas para o entrevistador e observações de logística. Um indicador calculado no cliente mostra quantas das cinco seções já possuem conteúdo, sem persistir um contador que possa ficar desatualizado.
+
+### Dados, segurança e limites
+
+- Existe no máximo uma preparação por entrevista. A FK composta `(interview_id, user_id)` impede que uma conta relacione conteúdo a uma entrevista de outra conta e remove a preparação por cascade quando a entrevista é excluída.
+- Leituras e escritas repetem o filtro de ownership, a Server Action revalida o UUID e todos os textos, e a autorização é confirmada novamente no servidor antes da mutation.
+- A tabela exposta possui RLS para `SELECT`, `INSERT` e `UPDATE`; `anon` não recebe privilégios e clientes autenticados não podem alterar `user_id`, `interview_id`, UUIDs ou timestamps.
+- As quatro seções gerais aceitam até 4.000 caracteres e logística aceita até 2.000. Os mesmos limites existem no formulário, no schema Zod e em constraints PostgreSQL.
+- O conteúdo é manual e privado. Não há IA, geração automática, scraping da empresa, mensagens ou compartilhamento público.
+- A migration `20260823183104_implement_stage_22_interview_preparation.sql` cria a tabela, o índice de ownership, o trigger de atualização e as policies. O teste pgTAP cobre privilégios, limites, isolamento entre usuários, FK composta e cascade.
+- O backup JSON passa ao schema 6 e inclui `interview_preparations`; agora ele cobre as quinze tabelas privadas.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -635,6 +653,7 @@ A suíte automatizada cobre:
 - normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
 - validação, janelas civis consecutivas e progresso das metas de produtividade;
+- validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -676,6 +695,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 19:** biblioteca central de documentos
 - [x] **Etapa 20:** importação CSV segura de candidaturas
 - [x] **Etapa 21:** metas de produtividade e comparação do ritmo de busca
+- [x] **Etapa 22:** preparação estruturada de entrevistas
 
 ## Licença
 

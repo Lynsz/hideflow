@@ -134,6 +134,18 @@ export async function getAuthenticatedUserDataExport(): Promise<{
       return request;
     },
   );
+  const interviewPreparationsRequest = fetchAllById<
+    ExportTableRow<"interview_preparations">
+  >((cursor) => {
+    let request = supabase
+      .from("interview_preparations")
+      .select("*")
+      .eq("user_id", userId)
+      .order("id")
+      .limit(DATA_EXPORT_PAGE_SIZE);
+    if (cursor) request = request.gt("id", cursor);
+    return request;
+  });
   const interviewEventsRequest = fetchAllById<
     ExportTableRow<"interview_events">
   >((cursor) => {
@@ -243,6 +255,7 @@ export async function getAuthenticatedUserDataExport(): Promise<{
     contacts,
     applicationContacts,
     interviews,
+    interviewPreparations,
     interviewEvents,
     applicationHistory,
     documents,
@@ -258,6 +271,7 @@ export async function getAuthenticatedUserDataExport(): Promise<{
     contactsRequest,
     applicationContactsRequest,
     interviewsRequest,
+    interviewPreparationsRequest,
     interviewEventsRequest,
     applicationHistoryRequest,
     documentsRequest,
@@ -281,6 +295,7 @@ export async function getAuthenticatedUserDataExport(): Promise<{
       contacts,
       applicationContacts,
       interviews,
+      interviewPreparations,
       interviewEvents,
       applicationHistory,
       documents,

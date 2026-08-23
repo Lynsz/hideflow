@@ -1,4 +1,10 @@
-import { ArrowLeft, ExternalLink, Pencil, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardCheck,
+  ExternalLink,
+  Pencil,
+  Plus,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -292,12 +298,21 @@ export default async function ApplicationDetailPage({
                     interview.interviewer_name ??
                     "Entrevistador não informado"}
                 </p>
-                <Link
-                  className="text-accent mt-3 inline-block text-xs hover:underline"
-                  href={`/dashboard/entrevistas/${interview.id}/editar`}
-                >
-                  Editar entrevista
-                </Link>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                  <Link
+                    className="text-accent inline-flex items-center gap-1 hover:underline"
+                    href={`/dashboard/entrevistas/${interview.id}/preparacao`}
+                  >
+                    <ClipboardCheck className="size-3.5" aria-hidden="true" />
+                    Preparar
+                  </Link>
+                  <Link
+                    className="text-muted-foreground hover:text-foreground hover:underline"
+                    href={`/dashboard/entrevistas/${interview.id}/editar`}
+                  >
+                    Editar entrevista
+                  </Link>
+                </div>
               </article>
             ))}
           </div>
