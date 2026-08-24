@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 23 implementada no código — retrospectiva estruturada pós-entrevista, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 24 implementada no código — central privada de aprendizados de entrevistas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -33,6 +33,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
 - Preparação estruturada por entrevista com pesquisa, histórias, perguntas e logística
 - Retrospectiva privada por entrevista com avaliação, aprendizados, perguntas recebidas e follow-up
+- Central de aprendizados com cobertura, avaliação média, distribuição, filtros e histórico de retrospectivas
 - Timeline agregada e auditável com criação, mudanças de status, entrevistas e interações manuais
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Biblioteca central de documentos com busca, filtros, ordenação e paginação
@@ -584,6 +585,22 @@ O agradecimento pode ser marcado manualmente como enviado. O primeiro registro u
 - A migration `20260824182517_implement_stage_23_interview_debrief.sql` cria tabela, índice, trigger, constraints, grants e policies. O teste pgTAP cobre privilégios, escala, isolamento, FK composta e cascade.
 - O backup JSON passa ao schema 7 e inclui `interview_debriefs`; agora ele cobre as dezesseis tabelas privadas.
 
+## Etapa 24: central de aprendizados de entrevistas
+
+`/dashboard/aprendizados` transforma as retrospectivas existentes em uma visão histórica de evolução. A página apresenta total de registros, cobertura das entrevistas finalizadas, avaliação média, agradecimentos ainda não marcados e distribuição das notas de 1 a 5. A listagem pode ser filtrada por tipo de entrevista, avaliação e situação do agradecimento, com ordenação e paginação preservadas na URL.
+
+Cada cartão mantém o vínculo com vaga, empresa, candidatura e entrevista, mostra trechos do que funcionou e do que deve melhorar e abre a retrospectiva original para edição. Candidaturas arquivadas continuam presentes e são identificadas, pois os aprendizados compõem o histórico do usuário.
+
+### Dados, segurança e performance
+
+- A central é um Server Component e envia ao navegador somente os campos necessários para renderizar a página. Nenhum `user_id` é aceito pela URL ou por formulário.
+- A listagem consulta `interview_debriefs` com filtro explícito de ownership e continua protegida pelas policies RLS da tabela e das relações.
+- As métricas exatas são calculadas por `get_interview_learning_summary()`, função SQL `SECURITY INVOKER` sem argumentos que deriva a identidade de `auth.uid()` e não contorna RLS.
+- `anon` não pode executar a função; somente `authenticated` recebe `EXECUTE`. A função usa `search_path = ''` e referências qualificadas.
+- A migration `20260824231525_implement_stage_24_interview_learning_center.sql` adiciona a função e um índice parcial para filtros de avaliação. Nenhuma tabela, dado duplicado ou snapshot agregado é criado.
+- O teste pgTAP cobre privilégios e isolamento das métricas entre dois usuários. Testes unitários cobrem filtros, URLs, cobertura, média e distribuição.
+- O backup permanece no schema 7: a etapa apenas deriva informações das retrospectivas já incluídas em `interview_debriefs`.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -714,6 +731,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 21:** metas de produtividade e comparação do ritmo de busca
 - [x] **Etapa 22:** preparação estruturada de entrevistas
 - [x] **Etapa 23:** retrospectiva estruturada pós-entrevista
+- [x] **Etapa 24:** central privada de aprendizados de entrevistas
 
 ## Licença
 

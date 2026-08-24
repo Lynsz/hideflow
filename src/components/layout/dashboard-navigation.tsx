@@ -3,6 +3,7 @@
 import {
   BarChart3,
   BellRing,
+  BookOpenCheck,
   Building2,
   CalendarDays,
   CalendarClock,
@@ -60,6 +61,11 @@ const navigationItems: NavigationItem[] = [
     label: "Entrevistas",
     href: "/dashboard/entrevistas",
     icon: CalendarClock,
+  },
+  {
+    label: "Aprendizados",
+    href: "/dashboard/aprendizados",
+    icon: BookOpenCheck,
   },
   {
     label: "Lembretes",

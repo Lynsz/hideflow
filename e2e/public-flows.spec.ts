@@ -41,6 +41,19 @@ test("redireciona visitante de rota protegida para o login", async ({
   ).toBeVisible();
 });
 
+test("protege a central de aprendizados e preserva os filtros", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/aprendizados?rating=4&thankYou=pending");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Faprendizados%3Frating%3D4%26thankYou%3Dpending$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

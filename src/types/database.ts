@@ -666,6 +666,22 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      get_interview_learning_summary: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_debriefs: number;
+          completed_interviews: number;
+          covered_completed_interviews: number;
+          rated_debriefs: number;
+          rating_total: number;
+          pending_thank_yous: number;
+          rating_1_count: number;
+          rating_2_count: number;
+          rating_3_count: number;
+          rating_4_count: number;
+          rating_5_count: number;
+        }[];
+      };
       import_applications_csv: {
         Args: { p_rows: Json };
         Returns: Json;
