@@ -348,6 +348,46 @@ export type Database = {
           },
         ];
       };
+      interview_debriefs: {
+        Row: {
+          id: string;
+          user_id: string;
+          interview_id: string;
+          overall_rating: number | null;
+          went_well: string | null;
+          improve_next_time: string | null;
+          questions_received: string | null;
+          follow_up_notes: string | null;
+          thank_you_sent_at: Timestamp | null;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          interview_id: string;
+          overall_rating?: number | null;
+          went_well?: string | null;
+          improve_next_time?: string | null;
+          questions_received?: string | null;
+          follow_up_notes?: string | null;
+          thank_you_sent_at?: Timestamp | null;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["interview_debriefs"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "interview_debriefs_interview_owner_fkey";
+            columns: ["interview_id", "user_id"];
+            isOneToOne: true;
+            referencedRelation: "interviews";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       interview_events: {
         Row: {
           id: string;

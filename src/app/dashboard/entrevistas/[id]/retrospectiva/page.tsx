@@ -1,4 +1,4 @@
-import { ArrowLeft, NotebookPen } from "lucide-react";
+import { ArrowLeft, MessageSquareText } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,20 +6,20 @@ import { z } from "zod";
 
 import { buttonStyles } from "@/components/ui/button";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
-import { InterviewPreparationForm } from "@/features/interview-preparation/components/interview-preparation-form";
+import { InterviewDebriefForm } from "@/features/interview-debrief/components/interview-debrief-form";
 import {
-  getInterviewPreparation,
-  toInterviewPreparationValues,
-} from "@/features/interview-preparation/services/interview-preparation-service";
+  getInterviewDebrief,
+  toInterviewDebriefValues,
+} from "@/features/interview-debrief/services/interview-debrief-service";
 import { InterviewWorkspaceContext } from "@/features/interviews/components/interview-workspace-context";
 import { InterviewWorkspaceNavigation } from "@/features/interviews/components/interview-workspace-navigation";
 import { getInterviewById } from "@/features/interviews/services/interview-service";
 
-export const metadata: Metadata = { title: "Preparação da entrevista" };
+export const metadata: Metadata = { title: "Retrospectiva da entrevista" };
 
 const interviewIdSchema = z.uuid();
 
-export default async function InterviewPreparationPage({
+export default async function InterviewDebriefPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -28,9 +28,9 @@ export default async function InterviewPreparationPage({
   const parsedId = interviewIdSchema.safeParse(id);
   if (!parsedId.success) notFound();
 
-  const [interview, preparation] = await Promise.all([
+  const [interview, debrief] = await Promise.all([
     getInterviewById(user!.id, parsedId.data),
-    getInterviewPreparation(user!.id, parsedId.data),
+    getInterviewDebrief(user!.id, parsedId.data),
   ]);
   if (!interview) notFound();
 
@@ -46,28 +46,32 @@ export default async function InterviewPreparationPage({
 
       <header className="mt-5">
         <p className="text-muted-foreground text-xs font-medium">
-          Preparação individual
+          Aprendizado individual
         </p>
         <h1 className="mt-1.5 flex items-center gap-2 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
-          Prepare sua entrevista
-          <NotebookPen className="text-accent size-5" aria-hidden="true" />
+          Registre sua retrospectiva
+          <MessageSquareText
+            className="text-accent size-5"
+            aria-hidden="true"
+          />
         </h1>
         <p className="text-muted-foreground mt-1.5 text-sm">
-          Organize fatos, exemplos e perguntas para chegar ao encontro com mais
-          clareza.
+          Capture impressões enquanto estão frescas e transforme cada conversa
+          em aprendizado para a próxima etapa.
         </p>
       </header>
 
       <InterviewWorkspaceContext interview={interview} />
       <InterviewWorkspaceNavigation
         interviewId={parsedId.data}
-        active="preparation"
+        active="debrief"
       />
 
       <div className="mt-4">
-        <InterviewPreparationForm
+        <InterviewDebriefForm
           interviewId={parsedId.data}
-          defaultValues={toInterviewPreparationValues(preparation)}
+          defaultValues={toInterviewDebriefValues(debrief)}
+          thankYouSentAt={debrief?.thank_you_sent_at ?? null}
         />
       </div>
     </main>

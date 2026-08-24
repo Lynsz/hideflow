@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ClipboardCheck,
   ExternalLink,
+  MessageSquareText,
   Pencil,
   Plus,
 } from "lucide-react";
@@ -305,6 +306,16 @@ export default async function ApplicationDetailPage({
                   >
                     <ClipboardCheck className="size-3.5" aria-hidden="true" />
                     Preparar
+                  </Link>
+                  <Link
+                    className="text-accent inline-flex items-center gap-1 hover:underline"
+                    href={`/dashboard/entrevistas/${interview.id}/retrospectiva`}
+                  >
+                    <MessageSquareText
+                      className="size-3.5"
+                      aria-hidden="true"
+                    />
+                    Retrospectiva
                   </Link>
                   <Link
                     className="text-muted-foreground hover:text-foreground hover:underline"

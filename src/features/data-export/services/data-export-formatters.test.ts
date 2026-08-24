@@ -64,6 +64,7 @@ const snapshot: UserDataSnapshot = {
   applicationContacts: [],
   interviews: [],
   interviewPreparations: [],
+  interviewDebriefs: [],
   interviewEvents: [],
   applicationHistory: [],
   documents: [],
@@ -143,7 +144,7 @@ describe("export formatters", () => {
     );
     const parsed = JSON.parse(serializeJsonExport(result));
 
-    expect(parsed.schemaVersion).toBe(6);
+    expect(parsed.schemaVersion).toBe(7);
     expect(parsed.account.email).toBe("ana@example.com");
     expect(parsed.data.applications).toHaveLength(1);
   });

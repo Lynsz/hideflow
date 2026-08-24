@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 22 implementada no código — preparação estruturada de entrevistas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 23 implementada no código — retrospectiva estruturada pós-entrevista, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -32,6 +32,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
 - Preparação estruturada por entrevista com pesquisa, histórias, perguntas e logística
+- Retrospectiva privada por entrevista com avaliação, aprendizados, perguntas recebidas e follow-up
 - Timeline agregada e auditável com criação, mudanças de status, entrevistas e interações manuais
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Biblioteca central de documentos com busca, filtros, ordenação e paginação
@@ -52,7 +53,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Registro de propostas e comparação de remuneração, bônus e condições
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
 - Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
-- Schema versionado com quinze tabelas, RLS, índices e constraints
+- Schema versionado com dezesseis tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -165,6 +166,7 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 | `contacts`                 | Contatos vinculados a empresas                                 |
 | `interviews`               | Entrevistas vinculadas a candidaturas                          |
 | `interview_preparations`   | Preparação privada e estruturada de cada entrevista            |
+| `interview_debriefs`       | Retrospectiva privada e aprendizados de cada entrevista        |
 | `application_contacts`     | Associação muitos-para-muitos entre candidaturas e contatos    |
 | `application_history`      | Histórico de mudanças de status                                |
 | `interview_events`         | Eventos append-only da evolução das entrevistas                |
@@ -433,7 +435,7 @@ Os dados são lidos em páginas de 500 registros usando cursores determinístico
 - As respostas usam `private, no-store`, `nosniff` e `Content-Disposition: attachment`.
 - Valores CSV iniciados por caracteres de fórmula são neutralizados para evitar execução ao abrir o arquivo em uma planilha.
 - Os arquivos são montados em memória, enviados diretamente na resposta e não são persistidos no servidor ou no Storage.
-- O JSON inclui o `storage_path`, as metas do profile, as preparações de entrevista e outros metadados privados, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão das preparações avança o formato para o schema 6.
+- O JSON inclui o `storage_path`, as metas do profile, as preparações e retrospectivas de entrevista e outros metadados privados, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão das retrospectivas avança o formato para o schema 7.
 - A restauração completa do backup JSON não faz parte desta etapa; a importação controlada do CSV de candidaturas é descrita na Etapa 20.
 
 ## Etapa 14: agenda unificada e iCalendar
@@ -567,6 +569,21 @@ Cada entrevista possui um espaço próprio em `/dashboard/entrevistas/[id]/prepa
 - A migration `20260823183104_implement_stage_22_interview_preparation.sql` cria a tabela, o índice de ownership, o trigger de atualização e as policies. O teste pgTAP cobre privilégios, limites, isolamento entre usuários, FK composta e cascade.
 - O backup JSON passa ao schema 6 e inclui `interview_preparations`; agora ele cobre as quinze tabelas privadas.
 
+## Etapa 23: retrospectiva pós-entrevista
+
+Cada entrevista também possui um espaço privado em `/dashboard/entrevistas/[id]/retrospectiva`, acessível pela agenda, pelo detalhe da candidatura e pela navegação do próprio espaço da entrevista. A retrospectiva registra uma avaliação de 1 a 5, pontos que funcionaram, oportunidades de melhoria, perguntas recebidas e notas de follow-up. O progresso é calculado no cliente a partir desses cinco pontos, sem persistir um contador derivado.
+
+O agradecimento pode ser marcado manualmente como enviado. O primeiro registro usa o horário do servidor e preserva esse instante em edições posteriores; desmarcar remove o registro. O HireFlow não envia e-mails, mensagens nem cria automações nessa ação.
+
+### Dados, segurança e limites
+
+- Existe no máximo uma retrospectiva por entrevista. A FK composta `(interview_id, user_id)` impede vínculos entre contas e aplica cascade quando a entrevista é excluída.
+- A Server Action deriva o proprietário da sessão, revalida UUID e conteúdo, confirma a entrevista autorizada e repete `user_id` em todas as consultas e mutations.
+- A tabela possui RLS para `SELECT`, `INSERT` e `UPDATE`; `anon` não recebe privilégios e o cliente autenticado só pode escrever nas colunas de conteúdo autorizadas.
+- Avaliação aceita apenas inteiros de 1 a 5. As três seções gerais aceitam até 4.000 caracteres, assim como perguntas recebidas; follow-up aceita até 2.000. Formulário, Zod e PostgreSQL compartilham esses limites.
+- A migration `20260824182517_implement_stage_23_interview_debrief.sql` cria tabela, índice, trigger, constraints, grants e policies. O teste pgTAP cobre privilégios, escala, isolamento, FK composta e cascade.
+- O backup JSON passa ao schema 7 e inclui `interview_debriefs`; agora ele cobre as dezesseis tabelas privadas.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -696,6 +713,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 20:** importação CSV segura de candidaturas
 - [x] **Etapa 21:** metas de produtividade e comparação do ritmo de busca
 - [x] **Etapa 22:** preparação estruturada de entrevistas
+- [x] **Etapa 23:** retrospectiva estruturada pós-entrevista
 
 ## Licença
 
