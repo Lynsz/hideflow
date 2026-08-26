@@ -14,6 +14,8 @@ import { FormFeedback } from "@/components/ui/form-feedback";
 import { LocalDateTime } from "@/components/ui/local-date-time";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { ActivityForm } from "@/features/activities/components/activity-form";
+import { ApplicationReadinessPanel } from "@/features/application-readiness/components/application-readiness-panel";
+import { calculateApplicationReadiness } from "@/features/application-readiness/services/application-readiness-calculator";
 import {
   ArchiveApplicationButton,
   DeleteApplicationButton,
@@ -93,6 +95,28 @@ export default async function ApplicationDetailPage({
     application.activities,
   );
   const now = new Date().toISOString();
+  const readiness = calculateApplicationReadiness({
+    id: application.id,
+    status: application.status,
+    archivedAt: application.archived_at,
+    jobUrl: application.job_url,
+    description: application.description,
+    notes: application.notes,
+    contactsCount: application.contacts.length,
+    technologiesCount: application.technologies.length,
+    documents: application.documents.map((document) => ({
+      documentType: document.document_type,
+    })),
+    reminders: application.reminders.map((reminder) => ({
+      completedAt: reminder.completed_at,
+    })),
+    interviews: application.interviews.map((interview) => ({
+      result: interview.result,
+      scheduledAt: interview.scheduled_at,
+    })),
+    hasOffer: application.offer !== null,
+    now,
+  });
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
@@ -153,6 +177,8 @@ export default async function ApplicationDetailPage({
           />
         </div>
       </header>
+
+      {readiness ? <ApplicationReadinessPanel result={readiness} /> : null}
 
       <div className="mt-7 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <section className="border-border bg-surface rounded-xl border p-5 sm:p-6">
@@ -222,7 +248,10 @@ export default async function ApplicationDetailPage({
         </section>
 
         <div className="space-y-4">
-          <section className="border-border bg-surface rounded-xl border p-5">
+          <section
+            id="contatos"
+            className="border-border bg-surface scroll-mt-20 rounded-xl border p-5"
+          >
             <h2 className="font-medium">Pipeline</h2>
             <div className="mt-5">
               <StatusSelect
@@ -251,15 +280,20 @@ export default async function ApplicationDetailPage({
             </div>
           </section>
 
-          <ApplicationTechnologyManager
-            applicationId={application.id}
-            linked={application.technologies}
-            suggestions={technologyOptions}
-          />
+          <div id="tecnologias" className="scroll-mt-20">
+            <ApplicationTechnologyManager
+              applicationId={application.id}
+              linked={application.technologies}
+              suggestions={technologyOptions}
+            />
+          </div>
         </div>
       </div>
 
-      <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
+      <section
+        id="entrevistas"
+        className="border-border bg-surface mt-4 scroll-mt-20 rounded-xl border p-5 sm:p-6"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-medium">Entrevistas</h2>
@@ -334,19 +368,26 @@ export default async function ApplicationDetailPage({
         )}
       </section>
 
-      <DocumentManager
-        applicationId={application.id}
-        documents={application.documents}
-      />
+      <div id="documentos" className="scroll-mt-20">
+        <DocumentManager
+          applicationId={application.id}
+          documents={application.documents}
+        />
+      </div>
 
-      <OfferManager
-        applicationId={application.id}
-        offer={application.offer}
-        defaultCurrency={application.currency}
-        today={now.slice(0, 10)}
-      />
+      <div id="proposta" className="scroll-mt-20">
+        <OfferManager
+          applicationId={application.id}
+          offer={application.offer}
+          defaultCurrency={application.currency}
+          today={now.slice(0, 10)}
+        />
+      </div>
 
-      <section className="border-border bg-surface mt-4 rounded-xl border p-5 sm:p-6">
+      <section
+        id="lembretes"
+        className="border-border bg-surface mt-4 scroll-mt-20 rounded-xl border p-5 sm:p-6"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-medium">Lembretes</h2>

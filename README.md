@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 27 implementada no código — dashboard operacional unificado com prioridades e fechamento semanal, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 28 implementada no código — prontidão contextual por candidatura, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -56,6 +56,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
 - Revisão semanal privada com resultados reais, reflexão manual e histórico por semana
 - Evolução de 4, 8 ou 12 semanas com consistência, gráfico composto e comparação com metas
+- Checklist contextual de prontidão em cada candidatura ativa, com progresso e atalhos de resolução
 - Schema versionado com dezessete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -650,6 +651,20 @@ Os oito indicadores, a próxima entrevista, o próximo lembrete e as candidatura
 - O progresso da revisão reutiliza o cálculo da Etapa 25 e permanece derivado dos cinco pontos de reflexão, sem contador persistido.
 - Nenhuma tabela, migration, dependência ou alteração no backup foi necessária. A etapa é somente leitura e não envia notificações nem altera o pipeline.
 
+## Etapa 28: prontidão contextual da candidatura
+
+A página de cada candidatura ativa passa a apresentar um checklist derivado para manter o processo preparado. O painel acompanha contexto da vaga, competências, contato, currículo e próximo passo; etapas de entrevista e proposta acrescentam seus próprios pontos somente quando são aplicáveis. Cada pendência leva diretamente ao registro correspondente, sem substituir a decisão do usuário sobre como conduzir o processo.
+
+O percentual representa apenas completude operacional dos registros. Ele não mede aderência à vaga, qualidade profissional nem probabilidade de contratação, e deixa de ser exibido quando a candidatura é arquivada ou chega a um status final.
+
+### Dados, segurança e performance
+
+- O cálculo ocorre no Server Component da página a partir dos dados privados que `getApplicationById` já carregou com ownership explícito e proteção por RLS.
+- O componente visual recebe somente o DTO do checklist. Identidade do usuário, caminhos internos de Storage e registros brutos não são serializados para o navegador.
+- Um próximo passo exige lembrete ainda pendente ou entrevista futura com resultado agendado/reagendado; lembretes concluídos e entrevistas passadas não mantêm o ponto completo.
+- Currículo é identificado apenas pelo metadado autorizado `document_type`; nenhuma signed URL é criada ao renderizar o painel.
+- O painel e suas regras são somente leitura. Nenhuma tabela, migration, consulta adicional, dependência, automação ou alteração no backup foi necessária.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -739,6 +754,7 @@ A suíte automatizada cobre:
 - validação, navegação UTC e progresso das revisões semanais;
 - filtros, buckets UTC, totais e médias da evolução semanal;
 - resumo de severidades, limite da prévia e progresso do foco operacional no dashboard;
+- prontidão contextual, itens condicionais por estágio, próximos passos futuros e exclusão de processos arquivados/finais;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -787,6 +803,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 25:** revisão semanal privada com métricas e reflexão
 - [x] **Etapa 26:** evolução semanal e tendências de consistência
 - [x] **Etapa 27:** dashboard operacional unificado
+- [x] **Etapa 28:** prontidão contextual da candidatura
 
 ## Licença
 
