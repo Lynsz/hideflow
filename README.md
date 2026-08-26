@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 26 implementada no código — evolução semanal privada com tendências de atividade, resultados e revisões, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 27 implementada no código — dashboard operacional unificado com prioridades e fechamento semanal, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -38,7 +38,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Upload, listagem, visualização, download, renomeação e exclusão de documentos privados por candidatura
 - Biblioteca central de documentos com busca, filtros, ordenação e paginação
 - Busca e filtros combináveis no Kanban, representados na URL
-- Dashboard com identidade, métricas e candidaturas recentes reais
+- Dashboard com identidade, métricas, foco operacional e candidaturas recentes reais
 - Analytics com período/empresa, KPIs de conversão, funil, tendências, fontes, salários e cobertura dos dados
 - Lembretes com prazo, filtros de situação, conclusão, reabertura e vínculo seguro com candidaturas
 - Resumo de pendências e próximo follow-up no dashboard
@@ -635,6 +635,21 @@ Cada semana abre sua revisão correspondente. A semana atual é identificada com
 - O gráfico possui tabela alternativa para leitores de tela e a tabela visível oferece os números exatos. Nenhuma biblioteca de gráficos ou dependência adicional foi instalada.
 - Nenhuma tabela, função SQL ou snapshot agregado foi criado. A página é somente leitura, não dispara automações e o backup permanece no schema 8 porque todas as fontes já estavam incluídas.
 
+## Etapa 27: dashboard operacional unificado
+
+O dashboard principal passa a reunir o panorama histórico existente com duas áreas operacionais. “Atenção agora” exibe as três primeiras prioridades na mesma ordem determinística da central, resume itens críticos e em atenção e preserva o link para a ação original. “Fechamento da semana” mostra estado, progresso, avaliação e foco da revisão civil atual, com atalhos para editar a reflexão e consultar a evolução.
+
+Os oito indicadores, a próxima entrevista, o próximo lembrete e as candidaturas recentes foram preservados. A etapa apenas aproxima os fluxos já existentes da página inicial para reduzir navegação e tornar o próximo passo visível.
+
+### Dados, segurança e performance
+
+- O usuário continua vindo da sessão SSR. A consulta da revisão e todas as fontes da central de prioridades repetem ownership e permanecem protegidas pelas policies RLS existentes.
+- O serviço é `server-only` e retorna um DTO restrito: contagens, três prioridades já autorizadas e somente os campos da revisão necessários à interface. Nenhum `user_id` ou registro bruto atravessa para Client Components.
+- A leitura do dashboard começa antes da resolução do resumo operacional; prioridades e revisão são consultadas em paralelo após a identidade autenticada estar disponível.
+- A prévia reutiliza integralmente as regras de severidade, exclusão de candidaturas arquivadas/finais, deduplicação e ordenação da Etapa 18. Não existe uma segunda interpretação da fila.
+- O progresso da revisão reutiliza o cálculo da Etapa 25 e permanece derivado dos cinco pontos de reflexão, sem contador persistido.
+- Nenhuma tabela, migration, dependência ou alteração no backup foi necessária. A etapa é somente leitura e não envia notificações nem altera o pipeline.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -723,6 +738,7 @@ A suíte automatizada cobre:
 - validação, janelas civis consecutivas e progresso das metas de produtividade;
 - validação, navegação UTC e progresso das revisões semanais;
 - filtros, buckets UTC, totais e médias da evolução semanal;
+- resumo de severidades, limite da prévia e progresso do foco operacional no dashboard;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -770,6 +786,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 24:** central privada de aprendizados de entrevistas
 - [x] **Etapa 25:** revisão semanal privada com métricas e reflexão
 - [x] **Etapa 26:** evolução semanal e tendências de consistência
+- [x] **Etapa 27:** dashboard operacional unificado
 
 ## Licença
 

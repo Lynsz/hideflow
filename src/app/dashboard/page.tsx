@@ -17,6 +17,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LocalDateTime } from "@/components/ui/local-date-time";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { formatDate } from "@/features/applications/services/application-formatters";
+import { DashboardFocusPanel } from "@/features/dashboard/components/dashboard-focus-panel";
+import { getDashboardFocus } from "@/features/dashboard/services/dashboard-focus-service";
 import { StatusBadge } from "@/features/dashboard/components/status-badge";
 import { getDashboardData } from "@/features/dashboard/services/get-dashboard-data";
 import type { MetricKey } from "@/features/dashboard/types/dashboard";
@@ -35,9 +37,11 @@ const metricIcons = {
 } satisfies Record<MetricKey, typeof BriefcaseBusiness>;
 
 export default async function DashboardPage() {
-  const [data, user] = await Promise.all([
-    getDashboardData(),
-    getCurrentUser(),
+  const dashboardRequest = getDashboardData();
+  const user = await getCurrentUser();
+  const [data, focus] = await Promise.all([
+    dashboardRequest,
+    user ? getDashboardFocus(user.id) : Promise.resolve(null),
   ]);
   const firstName = user?.fullName.split(/\s+/)[0] || "Usuário";
 
@@ -97,6 +101,8 @@ export default async function DashboardPage() {
           );
         })}
       </section>
+
+      {focus ? <DashboardFocusPanel data={focus} /> : null}
 
       {data.nextInterview ? (
         <section className="border-border bg-surface mt-4 flex flex-col justify-between gap-4 rounded-xl border p-5 sm:flex-row sm:items-center">
