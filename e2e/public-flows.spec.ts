@@ -67,6 +67,17 @@ test("protege a revisão semanal e preserva a semana selecionada", async ({
   ).toBeVisible();
 });
 
+test("protege a evolução semanal e preserva o período", async ({ page }) => {
+  await page.goto("/dashboard/evolucao?period=12w");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fevolucao%3Fperiod%3D12w$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

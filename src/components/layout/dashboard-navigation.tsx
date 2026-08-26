@@ -17,6 +17,7 @@ import {
   Settings,
   SquareKanban,
   Target,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +38,7 @@ const navigationItems: NavigationItem[] = [
     href: "/dashboard/revisao-semanal",
     icon: CalendarCheck2,
   },
+  { label: "Evolução", href: "/dashboard/evolucao", icon: TrendingUp },
   { label: "Busca", href: "/dashboard/busca", icon: Search },
   {
     label: "Candidaturas",

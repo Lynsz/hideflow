@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 25 implementada no código — revisão semanal privada com métricas reais e reflexão manual, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 26 implementada no código — evolução semanal privada com tendências de atividade, resultados e revisões, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -55,6 +55,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
 - Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
 - Revisão semanal privada com resultados reais, reflexão manual e histórico por semana
+- Evolução de 4, 8 ou 12 semanas com consistência, gráfico composto e comparação com metas
 - Schema versionado com dezessete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -619,6 +620,21 @@ A reflexão registra avaliação geral de 1 a 5, vitórias, desafios, aprendizad
 - A migration `20260826023315_implement_stage_25_weekly_reviews.sql` cria tabela, trigger, constraints, grants e policies. O teste pgTAP cobre privilégios, limites, semana válida, unicidade e isolamento entre usuários.
 - O backup JSON passa ao schema 8 e inclui `weekly_reviews`; agora ele cobre as dezessete tabelas privadas.
 
+## Etapa 26: evolução semanal e tendências
+
+`/dashboard/evolucao` transforma os registros privados existentes em uma leitura histórica de 4, 8 ou 12 semanas civis UTC. A página reúne semanas ativas, revisões concluídas, avaliação média, candidaturas, entrevistas e propostas; o gráfico empilhado mostra a composição entre candidaturas, follow-ups, contatos, entrevistas e propostas, enquanto a tabela apresenta os valores exatos e as metas das três ações de produtividade.
+
+Cada semana abre sua revisão correspondente. A semana atual é identificada como parcial, evitando comparar silenciosamente um período ainda em andamento com semanas encerradas.
+
+### Dados, segurança e performance
+
+- O período é validado por allowlist e representado na URL. Valores ausentes, repetidos ou inválidos retornam ao padrão seguro de oito semanas.
+- A central é um Server Component. O usuário vem da sessão SSR, nenhuma identidade é aceita pela URL e todas as seis fontes repetem `user_id` mesmo permanecendo protegidas por RLS.
+- As consultas selecionam somente identificador e data necessários, executam em paralelo e percorrem páginas de 500 registros por cursor determinístico, sem depender do limite padrão da Data API.
+- A agregação ocorre no servidor em buckets de segunda a domingo UTC. Registros inválidos ou fora do recorte são ignorados, semanas sem atividade permanecem visíveis e médias consideram apenas avaliações existentes.
+- O gráfico possui tabela alternativa para leitores de tela e a tabela visível oferece os números exatos. Nenhuma biblioteca de gráficos ou dependência adicional foi instalada.
+- Nenhuma tabela, função SQL ou snapshot agregado foi criado. A página é somente leitura, não dispara automações e o backup permanece no schema 8 porque todas as fontes já estavam incluídas.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -706,6 +722,7 @@ A suíte automatizada cobre:
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
 - validação, janelas civis consecutivas e progresso das metas de produtividade;
 - validação, navegação UTC e progresso das revisões semanais;
+- filtros, buckets UTC, totais e médias da evolução semanal;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -752,6 +769,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 23:** retrospectiva estruturada pós-entrevista
 - [x] **Etapa 24:** central privada de aprendizados de entrevistas
 - [x] **Etapa 25:** revisão semanal privada com métricas e reflexão
+- [x] **Etapa 26:** evolução semanal e tendências de consistência
 
 ## Licença
 
