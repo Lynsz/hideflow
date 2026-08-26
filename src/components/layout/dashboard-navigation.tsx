@@ -7,6 +7,7 @@ import {
   Building2,
   CalendarDays,
   CalendarClock,
+  CalendarCheck2,
   Columns3,
   FileStack,
   LayoutDashboard,
@@ -31,6 +32,11 @@ const navigationItems: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Prioridades", href: "/dashboard/prioridades", icon: ListChecks },
   { label: "Metas", href: "/dashboard/metas", icon: Target },
+  {
+    label: "Revisão semanal",
+    href: "/dashboard/revisao-semanal",
+    icon: CalendarCheck2,
+  },
   { label: "Busca", href: "/dashboard/busca", icon: Search },
   {
     label: "Candidaturas",

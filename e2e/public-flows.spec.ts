@@ -54,6 +54,19 @@ test("protege a central de aprendizados e preserva os filtros", async ({
   ).toBeVisible();
 });
 
+test("protege a revisão semanal e preserva a semana selecionada", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/revisao-semanal?week=2026-08-24");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Frevisao-semanal%3Fweek%3D2026-08-24$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

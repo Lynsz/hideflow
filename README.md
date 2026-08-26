@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 24 implementada no código — central privada de aprendizados de entrevistas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 25 implementada no código — revisão semanal privada com métricas reais e reflexão manual, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -54,7 +54,8 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Registro de propostas e comparação de remuneração, bônus e condições
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
 - Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
-- Schema versionado com dezesseis tabelas, RLS, índices e constraints
+- Revisão semanal privada com resultados reais, reflexão manual e histórico por semana
+- Schema versionado com dezessete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
 ## Requisitos
@@ -177,6 +178,7 @@ Se a confirmação de e-mail estiver habilitada, o cadastro exibe uma instruçã
 | `application_technologies` | Associação muitos-para-muitos entre candidaturas e tecnologias |
 | `application_activities`   | Interações manuais registradas por candidatura                 |
 | `application_offers`       | Propostas recebidas e condições de remuneração                 |
+| `weekly_reviews`           | Reflexão privada e conclusão de cada semana civil em UTC       |
 
 Todas as chaves são UUID. FKs compostas com `user_id` impedem que registros de um usuário sejam relacionados aos de outro usuário. Exclusões de usuário propagam por `ON DELETE CASCADE`; exclusões de candidaturas também removem seus registros dependentes. Empresas com candidaturas não podem ser removidas antes de desvincular ou tratar essas candidaturas.
 
@@ -425,7 +427,7 @@ As categorias são consultadas em paralelo e exibem no máximo seis itens cada. 
 
 ## Etapa 13: exportação e portabilidade dos dados
 
-A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, preparações, eventos, histórico, metadados de documentos, lembretes, tecnologias, interações manuais e propostas. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
+A seção de configurações oferece duas exportações geradas sob demanda. O backup JSON é versionado e contém perfil, empresas, candidaturas, contatos, vínculos, entrevistas, preparações, retrospectivas, eventos, histórico, metadados de documentos, lembretes, tecnologias, interações manuais, propostas e revisões semanais. O CSV traz uma visão das candidaturas enriquecida com nome da empresa e tecnologias, usa UTF-8 com BOM e pode ser aberto em planilhas.
 
 Os dados são lidos em páginas de 500 registros usando cursores determinísticos, evitando o limite padrão de linhas da Data API. As tabelas são carregadas em paralelo e cada sequência avança pela chave primária. Como não existe uma transação única entre todas as consultas HTTP, alterações feitas durante o download podem aparecer apenas parcialmente no arquivo; recomenda-se evitar edições simultâneas durante backups grandes.
 
@@ -436,7 +438,7 @@ Os dados são lidos em páginas de 500 registros usando cursores determinístico
 - As respostas usam `private, no-store`, `nosniff` e `Content-Disposition: attachment`.
 - Valores CSV iniciados por caracteres de fórmula são neutralizados para evitar execução ao abrir o arquivo em uma planilha.
 - Os arquivos são montados em memória, enviados diretamente na resposta e não são persistidos no servidor ou no Storage.
-- O JSON inclui o `storage_path`, as metas do profile, as preparações e retrospectivas de entrevista e outros metadados privados, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão das retrospectivas avança o formato para o schema 7.
+- O JSON inclui o `storage_path`, as metas do profile, preparações, retrospectivas e revisões semanais, mas não contém os arquivos privados, signed URLs, senhas, tokens ou chaves. A inclusão de `weekly_reviews` avança o formato para o schema 8.
 - A restauração completa do backup JSON não faz parte desta etapa; a importação controlada do CSV de candidaturas é descrita na Etapa 20.
 
 ## Etapa 14: agenda unificada e iCalendar
@@ -601,6 +603,22 @@ Cada cartão mantém o vínculo com vaga, empresa, candidatura e entrevista, mos
 - O teste pgTAP cobre privilégios e isolamento das métricas entre dois usuários. Testes unitários cobrem filtros, URLs, cobertura, média e distribuição.
 - O backup permanece no schema 7: a etapa apenas deriva informações das retrospectivas já incluídas em `interview_debriefs`.
 
+## Etapa 25: revisão semanal privada
+
+`/dashboard/revisao-semanal` reúne, para cada semana civil de segunda a domingo em UTC, candidaturas enviadas, follow-ups concluídos, contatos realizados, entrevistas concluídas e propostas recebidas. As três primeiras métricas são comparadas às metas privadas já configuradas. O usuário pode navegar por semanas passadas; datas futuras são normalizadas para a semana atual e nunca autorizadas em mutations.
+
+A reflexão registra avaliação geral de 1 a 5, vitórias, desafios, aprendizados e foco da próxima semana. O progresso é derivado no cliente e a conclusão é uma marcação manual reversível; o primeiro horário de conclusão é definido pelo servidor e preservado durante edições enquanto o item permanece concluído.
+
+### Dados, segurança e limites
+
+- Existe no máximo uma revisão por usuário e início de semana. A constraint exige segunda-feira e a chave única `(user_id, week_start)` evita duplicidade mesmo sob concorrência.
+- A Server Action deriva o proprietário da sessão, revalida o conteúdo e rejeita semanas futuras ou que não comecem na segunda-feira. Leituras e escritas repetem o filtro de ownership.
+- A tabela possui RLS para `SELECT`, `INSERT` e `UPDATE`; `anon` não recebe privilégios, não existe permissão de exclusão e clientes autenticados só podem escrever nas colunas de conteúdo autorizadas.
+- As três seções gerais aceitam até 4.000 caracteres e o foco da próxima semana aceita até 2.000. Formulário, Zod e PostgreSQL compartilham esses limites.
+- Métricas são contagens server-side dos registros privados existentes e não ficam duplicadas em snapshots. A página não envia mensagens, notificações, e-mails nem altera o pipeline.
+- A migration `20260826023315_implement_stage_25_weekly_reviews.sql` cria tabela, trigger, constraints, grants e policies. O teste pgTAP cobre privilégios, limites, semana válida, unicidade e isolamento entre usuários.
+- O backup JSON passa ao schema 8 e inclui `weekly_reviews`; agora ele cobre as dezessete tabelas privadas.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -687,6 +705,7 @@ A suíte automatizada cobre:
 - normalização do e-mail e requisitos da nova senha no fluxo de recuperação;
 - aplicação do período preferido quando Analytics não recebe filtro na URL.
 - validação, janelas civis consecutivas e progresso das metas de produtividade;
+- validação, navegação UTC e progresso das revisões semanais;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -732,6 +751,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 22:** preparação estruturada de entrevistas
 - [x] **Etapa 23:** retrospectiva estruturada pós-entrevista
 - [x] **Etapa 24:** central privada de aprendizados de entrevistas
+- [x] **Etapa 25:** revisão semanal privada com métricas e reflexão
 
 ## Licença
 

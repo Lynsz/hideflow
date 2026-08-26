@@ -21,6 +21,7 @@ export type UserDataSnapshot = {
   applicationTechnologies: ExportTableRow<"application_technologies">[];
   applicationActivities: ExportTableRow<"application_activities">[];
   applicationOffers: ExportTableRow<"application_offers">[];
+  weeklyReviews: ExportTableRow<"weekly_reviews">[];
 };
 
 export type UserDataExport = {

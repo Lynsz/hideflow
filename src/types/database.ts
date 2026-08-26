@@ -630,6 +630,38 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["technologies"]["Insert"]>;
         Relationships: [];
       };
+      weekly_reviews: {
+        Row: {
+          id: string;
+          user_id: string;
+          week_start: string;
+          overall_rating: number | null;
+          wins: string | null;
+          challenges: string | null;
+          lessons: string | null;
+          next_week_focus: string | null;
+          completed_at: Timestamp | null;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          week_start: string;
+          overall_rating?: number | null;
+          wins?: string | null;
+          challenges?: string | null;
+          lessons?: string | null;
+          next_week_focus?: string | null;
+          completed_at?: Timestamp | null;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["weekly_reviews"]["Insert"]
+        >;
+        Relationships: [];
+      };
       application_technologies: {
         Row: {
           application_id: string;
