@@ -78,6 +78,17 @@ test("protege a evolução semanal e preserva o período", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("protege a central de prontidão e preserva o filtro", async ({ page }) => {
+  await page.goto("/dashboard/prontidao?estado=incomplete");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fprontidao%3Festado%3Dincomplete$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

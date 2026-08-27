@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 28 implementada no código — prontidão contextual por candidatura, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 29 implementada no código — central agregada de prontidão das candidaturas ativas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 ## Stack
 
@@ -57,6 +57,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Revisão semanal privada com resultados reais, reflexão manual e histórico por semana
 - Evolução de 4, 8 ou 12 semanas com consistência, gráfico composto e comparação com metas
 - Checklist contextual de prontidão em cada candidatura ativa, com progresso e atalhos de resolução
+- Central de prontidão com média, filtros, pendências e ações por candidatura ativa
 - Schema versionado com dezessete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -665,6 +666,21 @@ O percentual representa apenas completude operacional dos registros. Ele não me
 - Currículo é identificado apenas pelo metadado autorizado `document_type`; nenhuma signed URL é criada ao renderizar o painel.
 - O painel e suas regras são somente leitura. Nenhuma tabela, migration, consulta adicional, dependência, automação ou alteração no backup foi necessária.
 
+## Etapa 29: central agregada de prontidão
+
+`/dashboard/prontidao` reúne as candidaturas ativas e reaplica o checklist contextual da Etapa 28 em uma fila operacional. A central mostra quantidade analisada, processos com pendências, processos prontos e média de completude, oferece filtros representados na URL e ordena primeiro as candidaturas com menor percentual de preparação.
+
+Cada cartão expõe até três lacunas, mantém acesso ao detalhe e leva diretamente ao primeiro ponto a resolver. Âncoras do checklist individual são contextualizadas com o identificador da candidatura correta, enquanto ações independentes, como criar um lembrete, preservam sua URL original.
+
+### Dados, segurança e performance
+
+- A página é um Server Component protegido e obtém o usuário exclusivamente da sessão SSR. Todas as sete fontes repetem `user_id` e continuam protegidas pelas policies RLS existentes.
+- A consulta inicial seleciona somente candidaturas ativas não arquivadas. Depois dela, contatos, tecnologias, currículos, lembretes pendentes, entrevistas e propostas são carregados em paralelo apenas para os IDs autorizados.
+- As fontes relacionadas usam paginação em blocos de 500 registros. A interface limita a análise às 200 candidaturas ativas menos recentes e informa explicitamente quando o limite é atingido.
+- Descrição, observações e registros relacionados permanecem no servidor e são reduzidos a contagens, estados, percentuais e links autorizados antes da renderização.
+- A central reutiliza o mesmo calculador da página de detalhe; não existe uma segunda definição de prontidão. Filtros, resumo e ordenação são determinísticos e cobertos por testes unitários.
+- Nenhuma tabela, migration, mutation, dependência, automação ou alteração no backup foi necessária.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -755,6 +771,7 @@ A suíte automatizada cobre:
 - filtros, buckets UTC, totais e médias da evolução semanal;
 - resumo de severidades, limite da prévia e progresso do foco operacional no dashboard;
 - prontidão contextual, itens condicionais por estágio, próximos passos futuros e exclusão de processos arquivados/finais;
+- agregação, filtros, resumo, ordenação e contextualização de links da central de prontidão;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -804,6 +821,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 26:** evolução semanal e tendências de consistência
 - [x] **Etapa 27:** dashboard operacional unificado
 - [x] **Etapa 28:** prontidão contextual da candidatura
+- [x] **Etapa 29:** central agregada de prontidão
 
 ## Licença
 

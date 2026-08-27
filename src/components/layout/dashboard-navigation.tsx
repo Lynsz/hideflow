@@ -9,6 +9,7 @@ import {
   CalendarClock,
   CalendarCheck2,
   Columns3,
+  ClipboardList,
   FileStack,
   LayoutDashboard,
   ListChecks,
@@ -32,6 +33,7 @@ import type { NavigationItem } from "@/types/navigation";
 const navigationItems: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Prioridades", href: "/dashboard/prioridades", icon: ListChecks },
+  { label: "Prontidão", href: "/dashboard/prontidao", icon: ClipboardList },
   { label: "Metas", href: "/dashboard/metas", icon: Target },
   {
     label: "Revisão semanal",
