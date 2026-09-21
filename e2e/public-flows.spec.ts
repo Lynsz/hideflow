@@ -79,10 +79,10 @@ test("protege a evolução semanal e preserva o período", async ({ page }) => {
 });
 
 test("protege a central de prontidão e preserva o filtro", async ({ page }) => {
-  await page.goto("/dashboard/prontidao?estado=incomplete");
+  await page.goto("/dashboard/prontidao?estado=incomplete&lacuna=resume");
 
   await expect(page).toHaveURL(
-    /\/login\?next=%2Fdashboard%2Fprontidao%3Festado%3Dincomplete$/,
+    /\/login\?next=%2Fdashboard%2Fprontidao%3Festado%3Dincomplete%26lacuna%3Dresume$/,
   );
   await expect(
     page.getByRole("heading", { name: "Bem-vinda de volta" }),

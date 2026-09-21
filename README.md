@@ -2,7 +2,9 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 29 implementada no código — central agregada de prontidão das candidaturas ativas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 30 implementada no código — mapa de lacunas da prontidão, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+
+> Segurança em 21/09/2026: `npm audit` identifica vulnerabilidades críticas no Next.js 16.3.1 e avisos adicionais em dependências. Não publique esta revisão antes de atualizar e validar as dependências afetadas. Consulte os avisos [GHSA-p293-qw3h-jr36](https://github.com/advisories/GHSA-p293-qw3h-jr36) e [GHSA-2xp9-vwfh-vxw4](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4).
 
 ## Stack
 
@@ -58,6 +60,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Evolução de 4, 8 ou 12 semanas com consistência, gráfico composto e comparação com metas
 - Checklist contextual de prontidão em cada candidatura ativa, com progresso e atalhos de resolução
 - Central de prontidão com média, filtros, pendências e ações por candidatura ativa
+- Mapa das lacunas mais frequentes, com população aplicável e filtro direto para correção
 - Schema versionado com dezessete tabelas, RLS, índices e constraints
 - Loading, error boundary, 404 e navegação responsiva
 
@@ -681,6 +684,19 @@ Cada cartão expõe até três lacunas, mantém acesso ao detalhe e leva diretam
 - A central reutiliza o mesmo calculador da página de detalhe; não existe uma segunda definição de prontidão. Filtros, resumo e ordenação são determinísticos e cobertos por testes unitários.
 - Nenhuma tabela, migration, mutation, dependência, automação ou alteração no backup foi necessária.
 
+## Etapa 30: mapa de lacunas da prontidão
+
+A central de prontidão mostra a frequência de cada registro ausente entre as candidaturas ativas analisadas. Cada categoria informa `faltando em X de Y candidaturas aplicáveis`: o denominador de entrevista e proposta inclui somente os processos cujos estágios exigem esses registros. Uma candidatura pode ter várias lacunas, portanto as categorias não são somáveis entre si.
+
+Selecionar uma categoria aplica o filtro `lacuna` na URL e abre uma fila apenas com as candidaturas que precisam daquele registro. O botão principal de cada cartão aponta para a lacuna selecionada, mesmo quando há outras pendências anteriores no checklist. As abas de estado limpam a seleção da lacuna; “Todas as lacunas” retorna à fila pendente sem essa restrição.
+
+### Dados, segurança e performance
+
+- O mapa reutiliza os resultados de prontidão da Etapa 29; não adiciona consultas, colunas, tabelas, migrations, mutations ou dados persistidos.
+- Contagens e percentuais são calculados no servidor para as candidaturas efetivamente analisadas pela central, respeitando o limite explícito de 200 candidaturas. Não representam, sem ressalva, processos fora desse limite.
+- O filtro aceita apenas as sete chaves conhecidas. Valores inválidos voltam ao padrão, e os links são construídos com chaves controladas, sem incorporar IDs ou caminhos arbitrários fornecidos pelo navegador.
+- Metadados privados usados no cálculo permanecem no servidor; a interface expõe somente nomes das lacunas, contagens, percentuais e links das candidaturas autorizadas.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -772,6 +788,7 @@ A suíte automatizada cobre:
 - resumo de severidades, limite da prévia e progresso do foco operacional no dashboard;
 - prontidão contextual, itens condicionais por estágio, próximos passos futuros e exclusão de processos arquivados/finais;
 - agregação, filtros, resumo, ordenação e contextualização de links da central de prontidão;
+- denominadores aplicáveis, filtros por lacuna e ação contextual do mapa de prontidão;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -822,6 +839,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 27:** dashboard operacional unificado
 - [x] **Etapa 28:** prontidão contextual da candidatura
 - [x] **Etapa 29:** central agregada de prontidão
+- [x] **Etapa 30:** mapa de lacunas da prontidão
 
 ## Licença
 

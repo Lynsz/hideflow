@@ -2,6 +2,7 @@ import {
   ACTIVE_APPLICATION_STATUSES,
   INTERVIEW_APPLICATION_STATUSES,
 } from "@/features/applications/constants";
+import { READINESS_GAP_LABELS } from "@/features/application-readiness/constants";
 import type {
   ApplicationReadinessInput,
   ApplicationReadinessItem,
@@ -64,7 +65,7 @@ export function calculateApplicationReadiness(
   const items: ApplicationReadinessItem[] = [
     item({
       key: "context",
-      label: "Contexto da vaga",
+      label: READINESS_GAP_LABELS.context,
       description: contextComplete
         ? "Link e contexto da oportunidade registrados."
         : "Adicione o link da vaga e uma descrição ou observação útil.",
@@ -73,7 +74,7 @@ export function calculateApplicationReadiness(
     }),
     item({
       key: "technologies",
-      label: "Competências principais",
+      label: READINESS_GAP_LABELS.technologies,
       description: input.technologiesCount
         ? "Tecnologias relevantes vinculadas à candidatura."
         : "Mapeie as competências principais desta vaga.",
@@ -82,7 +83,7 @@ export function calculateApplicationReadiness(
     }),
     item({
       key: "contact",
-      label: "Contato do processo",
+      label: READINESS_GAP_LABELS.contact,
       description: input.contactsCount
         ? "Há pelo menos um contato vinculado ao processo."
         : "Vincule recrutador, gestor ou entrevistador quando disponível.",
@@ -91,7 +92,7 @@ export function calculateApplicationReadiness(
     }),
     item({
       key: "resume",
-      label: "Currículo utilizado",
+      label: READINESS_GAP_LABELS.resume,
       description: hasResume
         ? "O currículo desta candidatura está anexado."
         : "Anexe o currículo usado nesta candidatura.",
@@ -101,7 +102,7 @@ export function calculateApplicationReadiness(
     item(
       {
         key: "next_step",
-        label: "Próximo passo",
+        label: READINESS_GAP_LABELS.next_step,
         description: hasNextStep
           ? "Há um lembrete pendente ou uma entrevista futura."
           : "Defina um lembrete ou agende a próxima entrevista.",
@@ -120,7 +121,7 @@ export function calculateApplicationReadiness(
     items.push(
       item({
         key: "interview",
-        label: "Entrevista registrada",
+        label: READINESS_GAP_LABELS.interview,
         description: input.interviews.length
           ? "A etapa de entrevista possui registro no processo."
           : "Registre a entrevista correspondente ao estágio atual.",
@@ -134,7 +135,7 @@ export function calculateApplicationReadiness(
     items.push(
       item({
         key: "offer",
-        label: "Proposta estruturada",
+        label: READINESS_GAP_LABELS.offer,
         description: input.hasOffer
           ? "Remuneração e condições da proposta estão registradas."
           : "Registre remuneração, prazo e condições da proposta.",

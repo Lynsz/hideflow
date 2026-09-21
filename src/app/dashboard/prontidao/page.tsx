@@ -18,12 +18,19 @@ import {
   type ReadinessCenterFilter,
 } from "@/features/application-readiness/constants";
 import {
+  filterReadinessCenterByGap,
   filterReadinessCenterItems,
+  getReadinessActionGap,
   normalizeReadinessCenterFilter,
+  normalizeReadinessGapFilter,
   summarizeReadinessCenter,
+  summarizeReadinessGaps,
 } from "@/features/application-readiness/services/readiness-center-rules";
 import { getReadinessCenter } from "@/features/application-readiness/services/readiness-center-service";
-import type { ReadinessCenterItem } from "@/features/application-readiness/types/readiness-center";
+import type {
+  ReadinessCenterItem,
+  ReadinessGapFilter,
+} from "@/features/application-readiness/types/readiness-center";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { StatusBadge } from "@/features/dashboard/components/status-badge";
 import { cn } from "@/lib/utils";
@@ -36,12 +43,24 @@ function filterHref(filter: ReadinessCenterFilter) {
     : `/dashboard/prontidao?estado=${filter}`;
 }
 
-function ReadinessCard({ item }: { item: ReadinessCenterItem }) {
+function gapHref(gap: ReadinessGapFilter) {
+  return gap === "all"
+    ? "/dashboard/prontidao?estado=incomplete"
+    : `/dashboard/prontidao?estado=incomplete&lacuna=${gap}`;
+}
+
+function ReadinessCard({
+  item,
+  selectedGap,
+}: {
+  item: ReadinessCenterItem;
+  selectedGap: ReadinessGapFilter;
+}) {
   const applicationHref = `/dashboard/candidaturas/${item.application.id}`;
   const gaps = item.readiness.items.filter(
     (readinessItem) => !readinessItem.complete,
   );
-  const primaryGap = gaps[0];
+  const primaryGap = getReadinessActionGap(item, selectedGap);
 
   return (
     <article className="border-border bg-surface rounded-xl border p-4 sm:p-5">
@@ -133,7 +152,11 @@ function ReadinessCard({ item }: { item: ReadinessCenterItem }) {
             href={primaryGap?.href ?? applicationHref}
             className={buttonStyles({ variant: "secondary", size: "sm" })}
           >
-            {primaryGap ? "Resolver próximo ponto" : "Revisar registros"}
+            {primaryGap
+              ? selectedGap === "all"
+                ? "Resolver próximo ponto"
+                : `Resolver: ${primaryGap.label}`
+              : "Revisar registros"}
             <ArrowUpRight className="size-4" aria-hidden="true" />
           </Link>
         </div>
@@ -145,18 +168,28 @@ function ReadinessCard({ item }: { item: ReadinessCenterItem }) {
 export default async function ReadinessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string | string[] }>;
+  searchParams: Promise<{
+    estado?: string | string[];
+    lacuna?: string | string[];
+  }>;
 }) {
-  const [{ estado }, user] = await Promise.all([
+  const [{ estado, lacuna }, user] = await Promise.all([
     searchParams,
     getCurrentUser(),
   ]);
   const filter = normalizeReadinessCenterFilter(
     typeof estado === "string" ? estado : estado?.[0],
   );
+  const selectedGap = normalizeReadinessGapFilter(
+    typeof lacuna === "string" ? lacuna : lacuna?.[0],
+  );
   const result = await getReadinessCenter(user!.id);
   const summary = summarizeReadinessCenter(result.items);
-  const visibleItems = filterReadinessCenterItems(result.items, filter);
+  const gapSummaries = summarizeReadinessGaps(result.items);
+  const visibleItems = filterReadinessCenterByGap(
+    filterReadinessCenterItems(result.items, filter),
+    selectedGap,
+  );
   const filterCounts: Record<ReadinessCenterFilter, number> = {
     all: summary.total,
     incomplete: summary.incomplete,
@@ -224,6 +257,87 @@ export default async function ReadinessPage({
         atual; não avalia aderência à vaga ou chance de contratação.
       </p>
 
+      {gapSummaries.length ? (
+        <section
+          className="border-border bg-surface mt-6 rounded-xl border p-5 sm:p-6"
+          aria-labelledby="readiness-gaps-title"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="readiness-gaps-title" className="font-medium">
+                Mapa de lacunas
+              </h2>
+              <p className="text-muted-foreground mt-1 text-xs leading-5">
+                Candidaturas sem cada registro, entre as que precisam dele no
+                estágio atual. Uma candidatura pode aparecer em mais de uma
+                lacuna.
+              </p>
+            </div>
+            <Link
+              href={gapHref("all")}
+              aria-current={selectedGap === "all" ? "true" : undefined}
+              className={cn(
+                "rounded-full border px-3 py-2 text-xs transition-colors",
+                selectedGap === "all"
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Todas as lacunas
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {gapSummaries.map((gap) => {
+              const active = selectedGap === gap.key;
+              const content = (
+                <>
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <span className="font-medium">{gap.label}</span>
+                    <span className="text-muted-foreground shrink-0">
+                      {gap.missing} de {gap.applicable}
+                    </span>
+                  </div>
+                  <div className="bg-muted mt-3 h-2 overflow-hidden rounded-full">
+                    <div
+                      className="h-full rounded-full bg-amber-300"
+                      style={{ width: `${gap.percentage}%` }}
+                      role="progressbar"
+                      aria-label={`Candidaturas sem ${gap.label.toLowerCase()}`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={gap.percentage}
+                    />
+                  </div>
+                </>
+              );
+              const className = cn(
+                "border-border bg-muted/20 rounded-lg border p-4",
+                active && "border-accent/60 bg-accent/5",
+              );
+
+              return gap.missing ? (
+                <Link
+                  key={gap.key}
+                  href={gapHref(gap.key)}
+                  aria-current={active ? "true" : undefined}
+                  className={cn(
+                    className,
+                    "hover:border-accent/50 transition-colors",
+                  )}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div key={gap.key} className={className}>
+                  {content}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       <nav
         className="mt-6 flex gap-2 overflow-x-auto pb-1"
         aria-label="Filtrar prontidão"
@@ -261,7 +375,11 @@ export default async function ReadinessPage({
           aria-label="Candidaturas por prontidão"
         >
           {visibleItems.map((item) => (
-            <ReadinessCard key={item.application.id} item={item} />
+            <ReadinessCard
+              key={item.application.id}
+              item={item}
+              selectedGap={selectedGap}
+            />
           ))}
         </section>
       ) : (
@@ -274,7 +392,7 @@ export default async function ReadinessPage({
             }
             description={
               result.items.length
-                ? "Escolha outro filtro para revisar os processos atuais."
+                ? "Escolha outro estado ou limpe a lacuna para revisar os processos atuais."
                 : "Crie ou restaure uma candidatura para acompanhar sua prontidão."
             }
           />

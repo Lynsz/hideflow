@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildReadinessCenterItems,
+  filterReadinessCenterByGap,
   filterReadinessCenterItems,
+  getReadinessActionGap,
   normalizeReadinessCenterFilter,
+  normalizeReadinessGapFilter,
   summarizeReadinessCenter,
+  summarizeReadinessGaps,
 } from "@/features/application-readiness/services/readiness-center-rules";
 import type {
   ReadinessCenterApplicationSource,
@@ -167,5 +171,69 @@ describe("readiness center rules", () => {
     expect(normalizeReadinessCenterFilter("ready")).toBe("ready");
     expect(normalizeReadinessCenterFilter("unknown")).toBe("all");
     expect(normalizeReadinessCenterFilter()).toBe("all");
+  });
+
+  it("conta lacunas por candidatura aplicável, sem somar categorias entre si", () => {
+    const items = buildReadinessCenterItems(
+      sources({
+        applications: [
+          application("ready", {
+            job_url: "https://example.com/job",
+            notes: "Contexto",
+          }),
+          application("interview", { status: "technical_interview" }),
+        ],
+        contacts: [{ application_id: "ready" }],
+        technologies: [{ application_id: "ready" }],
+        resumes: [{ application_id: "ready" }],
+        reminders: [{ application_id: "ready" }],
+      }),
+      NOW,
+    );
+    const gaps = summarizeReadinessGaps(items);
+
+    expect(gaps.find((gap) => gap.key === "context")).toMatchObject({
+      missing: 1,
+      applicable: 2,
+      percentage: 50,
+    });
+    expect(gaps.find((gap) => gap.key === "interview")).toMatchObject({
+      missing: 1,
+      applicable: 1,
+      percentage: 100,
+    });
+    expect(gaps.some((gap) => gap.key === "offer")).toBe(false);
+    expect(gaps.every((gap) => gap.missing <= gap.applicable)).toBe(true);
+  });
+
+  it("filtra por lacuna e aponta a ação da lacuna selecionada", () => {
+    const items = buildReadinessCenterItems(
+      sources({
+        applications: [
+          application("resume-missing", {
+            job_url: "https://example.com/job",
+            notes: "Contexto",
+          }),
+          application("complete", {
+            job_url: "https://example.com/job",
+            notes: "Contexto",
+          }),
+        ],
+        resumes: [{ application_id: "complete" }],
+      }),
+      NOW,
+    );
+    const visible = filterReadinessCenterByGap(items, "resume");
+
+    expect(visible.map((item) => item.application.id)).toEqual([
+      "resume-missing",
+    ]);
+    expect(getReadinessActionGap(visible[0], "resume")).toMatchObject({
+      key: "resume",
+      href: "/dashboard/candidaturas/resume-missing#documentos",
+    });
+    expect(getReadinessActionGap(visible[0], "all")?.key).toBe("technologies");
+    expect(normalizeReadinessGapFilter("resume")).toBe("resume");
+    expect(normalizeReadinessGapFilter("unknown")).toBe("all");
   });
 });

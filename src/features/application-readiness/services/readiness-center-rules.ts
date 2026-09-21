@@ -1,16 +1,25 @@
 import {
   READINESS_CENTER_FILTERS,
+  READINESS_GAP_KEYS,
+  READINESS_GAP_LABELS,
   type ReadinessCenterFilter,
 } from "@/features/application-readiness/constants";
 import { calculateApplicationReadiness } from "@/features/application-readiness/services/application-readiness-calculator";
-import type { ApplicationReadinessResult } from "@/features/application-readiness/types/application-readiness";
+import type {
+  ApplicationReadinessItem,
+  ApplicationReadinessItemKey,
+  ApplicationReadinessResult,
+} from "@/features/application-readiness/types/application-readiness";
 import type {
   ReadinessCenterItem,
+  ReadinessGapFilter,
+  ReadinessGapSummary,
   ReadinessCenterSources,
   ReadinessCenterSummary,
 } from "@/features/application-readiness/types/readiness-center";
 
 const FILTERS = new Set<ReadinessCenterFilter>(READINESS_CENTER_FILTERS);
+const GAP_FILTERS = new Set<ReadinessGapFilter>(READINESS_GAP_KEYS);
 
 function groupInterviews(interviews: ReadinessCenterSources["interviews"]) {
   const byApplication = new Map<string, ReadinessCenterSources["interviews"]>();
@@ -58,6 +67,84 @@ export function filterReadinessCenterItems(
     filter === "ready"
       ? item.readiness.state === "ready"
       : item.readiness.state !== "ready",
+  );
+}
+
+export function normalizeReadinessGapFilter(
+  value?: string,
+): ReadinessGapFilter {
+  return GAP_FILTERS.has(value as ReadinessGapFilter)
+    ? (value as ReadinessGapFilter)
+    : "all";
+}
+
+export function filterReadinessCenterByGap(
+  items: ReadinessCenterItem[],
+  gap: ReadinessGapFilter,
+) {
+  if (gap === "all") return items;
+  return items.filter((item) =>
+    item.readiness.items.some(
+      (readinessItem) => readinessItem.key === gap && !readinessItem.complete,
+    ),
+  );
+}
+
+export function getReadinessActionGap(
+  item: ReadinessCenterItem,
+  selectedGap: ReadinessGapFilter,
+): ApplicationReadinessItem | undefined {
+  if (selectedGap !== "all") {
+    return item.readiness.items.find(
+      (readinessItem) =>
+        readinessItem.key === selectedGap && !readinessItem.complete,
+    );
+  }
+  return item.readiness.items.find((readinessItem) => !readinessItem.complete);
+}
+
+export function summarizeReadinessGaps(
+  items: ReadinessCenterItem[],
+): ReadinessGapSummary[] {
+  const summaries = new Map<
+    ApplicationReadinessItemKey,
+    Omit<ReadinessGapSummary, "percentage">
+  >();
+  for (const key of READINESS_GAP_KEYS) {
+    summaries.set(key, {
+      key,
+      label: READINESS_GAP_LABELS[key],
+      missing: 0,
+      applicable: 0,
+    });
+  }
+
+  for (const item of items) {
+    for (const readinessItem of item.readiness.items) {
+      const summary = summaries.get(readinessItem.key);
+      if (!summary) continue;
+      summary.applicable += 1;
+      if (!readinessItem.complete) summary.missing += 1;
+    }
+  }
+
+  return READINESS_GAP_KEYS.flatMap((key) => {
+    const summary = summaries.get(key)!;
+    return summary.applicable
+      ? [
+          {
+            ...summary,
+            percentage: Math.round(
+              (summary.missing / summary.applicable) * 100,
+            ),
+          },
+        ]
+      : [];
+  }).toSorted(
+    (left, right) =>
+      right.missing - left.missing ||
+      READINESS_GAP_KEYS.indexOf(left.key) -
+        READINESS_GAP_KEYS.indexOf(right.key),
   );
 }
 

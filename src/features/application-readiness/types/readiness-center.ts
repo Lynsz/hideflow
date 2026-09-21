@@ -1,4 +1,7 @@
-import type { ApplicationReadinessResult } from "@/features/application-readiness/types/application-readiness";
+import type {
+  ApplicationReadinessItemKey,
+  ApplicationReadinessResult,
+} from "@/features/application-readiness/types/application-readiness";
 import type { ApplicationStatus, InterviewResult } from "@/types/database";
 
 export type ReadinessCenterApplicationSource = {
@@ -43,6 +46,16 @@ export type ReadinessCenterSummary = {
   incomplete: number;
   ready: number;
   averagePercentage: number;
+};
+
+export type ReadinessGapFilter = ApplicationReadinessItemKey | "all";
+
+export type ReadinessGapSummary = {
+  key: ApplicationReadinessItemKey;
+  label: string;
+  missing: number;
+  applicable: number;
+  percentage: number;
 };
 
 export type ReadinessCenterResult = {
