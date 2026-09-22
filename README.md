@@ -2,18 +2,18 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 30 implementada no código — mapa de lacunas da prontidão, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 31 implementada no código — atualização de segurança das dependências, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
-> Segurança em 21/09/2026: `npm audit` identifica vulnerabilidades críticas no Next.js 16.3.1 e avisos adicionais em dependências. Não publique esta revisão antes de atualizar e validar as dependências afetadas. Consulte os avisos [GHSA-p293-qw3h-jr36](https://github.com/advisories/GHSA-p293-qw3h-jr36) e [GHSA-2xp9-vwfh-vxw4](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4).
+> Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
 ## Stack
 
-- Next.js 16 com App Router, Server Components e Server Actions
+- Next.js 16.3.6 com App Router, Server Components e Server Actions
 - React 19 e TypeScript em modo estrito
 - Tailwind CSS 4
 - Supabase PostgreSQL, Auth, SSR e Row Level Security
 - Zod e React Hook Form
-- Vitest, ESLint e Prettier
+- Vitest 4.1.11, ESLint e Prettier
 
 ## Funcionalidades atuais
 
@@ -697,6 +697,17 @@ Selecionar uma categoria aplica o filtro `lacuna` na URL e abre uma fila apenas 
 - O filtro aceita apenas as sete chaves conhecidas. Valores inválidos voltam ao padrão, e os links são construídos com chaves controladas, sem incorporar IDs ou caminhos arbitrários fornecidos pelo navegador.
 - Metadados privados usados no cálculo permanecem no servidor; a interface expõe somente nomes das lacunas, contagens, percentuais e links das candidaturas autorizadas.
 
+## Etapa 31: atualização de segurança das dependências
+
+O Next.js e seu preset de ESLint foram atualizados de 16.3.1 para 16.3.6 dentro da mesma linha minor. O Vitest foi atualizado de 4.1.10 para 4.1.11. O novo lockfile também fixa `sharp` 0.35.4 e `js-yaml` 4.3.2, eliminando os alertas registrados ao concluir a Etapa 30.
+
+### Escopo e validação
+
+- A atualização permanece restrita a versões patch compatíveis; não altera funcionalidades, migrations, contratos de dados ou políticas RLS.
+- O projeto continua usando as convenções já migradas para Next.js 16, portanto nenhum codemod ou ajuste de aplicação foi necessário.
+- O lockfile é a fonte reprodutível das versões indiretas corrigidas e deve ser mantido junto com o `package.json`.
+- A conclusão exige testes unitários, lint, formatação, geração de tipos de rota, verificação TypeScript, build de produção, smoke tests e `npm audit` sem vulnerabilidades.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -840,6 +851,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 28:** prontidão contextual da candidatura
 - [x] **Etapa 29:** central agregada de prontidão
 - [x] **Etapa 30:** mapa de lacunas da prontidão
+- [x] **Etapa 31:** atualização de segurança das dependências
 
 ## Licença
 
