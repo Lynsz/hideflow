@@ -89,6 +89,19 @@ test("protege a central de prontidão e preserva o filtro", async ({ page }) => 
   ).toBeVisible();
 });
 
+test("protege o hub da empresa e preserva o destino", async ({ page }) => {
+  await page.goto(
+    "/dashboard/empresas/00000000-0000-4000-8000-000000000032?feedback=created",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fempresas%2F00000000-0000-4000-8000-000000000032%3Ffeedback%3Dcreated$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

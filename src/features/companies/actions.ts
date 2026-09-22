@@ -28,8 +28,8 @@ export async function createCompany(
   const parsed = companySchema.safeParse(input);
   if (!parsed.success) return { success: false, message: INVALID_COMPANY };
 
-  const { error } = await insertCompany(user.id, parsed.data);
-  if (error)
+  const { data, error } = await insertCompany(user.id, parsed.data);
+  if (error || !data)
     return { success: false, message: "Não foi possível criar a empresa." };
 
   revalidatePath("/dashboard");
@@ -37,7 +37,7 @@ export async function createCompany(
   return {
     success: true,
     message: "Empresa criada com sucesso.",
-    redirectTo: "/dashboard/empresas?feedback=created",
+    redirectTo: `/dashboard/empresas/${data.id}?feedback=created`,
   };
 }
 
@@ -64,11 +64,12 @@ export async function updateCompany(
     };
 
   revalidatePath("/dashboard/empresas");
+  revalidatePath(`/dashboard/empresas/${companyId}`);
   revalidatePath("/dashboard/candidaturas");
   return {
     success: true,
     message: "Empresa atualizada com sucesso.",
-    redirectTo: "/dashboard/empresas?feedback=updated",
+    redirectTo: `/dashboard/empresas/${companyId}?feedback=updated`,
   };
 }
 

@@ -3,9 +3,15 @@ import "server-only";
 import type { CompanyFormValues } from "@/features/companies/schemas/company-schema";
 import type {
   Company,
+  CompanyDetail,
+  CompanyDetailApplication,
+  CompanyDetailContact,
   CompanyOption,
 } from "@/features/companies/types/company";
+import { summarizeCompanyApplications } from "@/features/companies/services/company-detail-rules";
 import { createClient } from "@/lib/supabase/server";
+
+const COMPANY_APPLICATION_LIMIT = 200;
 
 function emptyToNull(value: string) {
   return value === "" ? null : value;
@@ -64,6 +70,62 @@ export async function getCompanyById(userId: string, companyId: string) {
 
   if (error) throw new Error("Não foi possível carregar a empresa.");
   return data satisfies Company | null;
+}
+
+export async function getCompanyDetail(
+  userId: string,
+  companyId: string,
+): Promise<CompanyDetail | null> {
+  const supabase = await createClient();
+  const [companyResult, applicationsResult, contactsResult] = await Promise.all(
+    [
+      supabase
+        .from("companies")
+        .select(
+          "id, user_id, name, website, linkedin_url, location, notes, created_at, updated_at",
+        )
+        .eq("id", companyId)
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabase
+        .from("applications")
+        .select(
+          "id, job_title, status, location, work_mode, applied_at, archived_at, updated_at",
+          { count: "exact" },
+        )
+        .eq("company_id", companyId)
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(0, COMPANY_APPLICATION_LIMIT - 1),
+      supabase
+        .from("contacts")
+        .select("id, name, role, email, contact_type")
+        .eq("company_id", companyId)
+        .eq("user_id", userId)
+        .order("name", { ascending: true }),
+    ],
+  );
+
+  if (companyResult.error || applicationsResult.error || contactsResult.error) {
+    throw new Error("Não foi possível carregar os detalhes da empresa.");
+  }
+  if (!companyResult.data) return null;
+
+  const company = companyResult.data satisfies Company;
+  const applications =
+    applicationsResult.data satisfies CompanyDetailApplication[];
+  const contacts = contactsResult.data satisfies CompanyDetailContact[];
+  const totalApplications = applicationsResult.count ?? applications.length;
+
+  return {
+    company,
+    applications,
+    contacts,
+    applicationSummary: summarizeCompanyApplications(applications),
+    totalApplications,
+    isApplicationListLimited: totalApplications > applications.length,
+  };
 }
 
 export async function insertCompany(userId: string, values: CompanyFormValues) {

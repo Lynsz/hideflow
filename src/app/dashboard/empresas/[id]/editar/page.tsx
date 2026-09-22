@@ -23,11 +23,11 @@ export default async function EditCompanyPage({
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
       <Link
-        href="/dashboard/empresas"
+        href={`/dashboard/empresas/${id}`}
         className={buttonStyles({ variant: "ghost", className: "-ml-3" })}
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Voltar para empresas
+        Voltar para a empresa
       </Link>
       <header className="mt-5 mb-7">
         <h1 className="text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
@@ -39,6 +39,7 @@ export default async function EditCompanyPage({
       </header>
       <CompanyForm
         companyId={company.id}
+        cancelHref={`/dashboard/empresas/${company.id}`}
         defaultValues={{
           name: company.name,
           website: company.website ?? "",

@@ -6,6 +6,7 @@ import {
   Pencil,
   Plus,
   Search,
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -131,6 +132,19 @@ export default async function CompaniesPage({
                 ) : null}
 
                 <div className="border-border mt-5 flex flex-wrap items-center gap-2 border-t pt-4">
+                  <Link
+                    href={`/dashboard/empresas/${company.id}`}
+                    className={buttonStyles({
+                      variant: "secondary",
+                      size: "sm",
+                    })}
+                  >
+                    <SquareArrowOutUpRight
+                      className="size-4"
+                      aria-hidden="true"
+                    />
+                    Abrir
+                  </Link>
                   {company.website ? (
                     <a
                       className={buttonStyles({ variant: "ghost", size: "sm" })}

@@ -12,9 +12,9 @@ import type { ApplicationStatus } from "@/types/database";
 export default async function NewApplicationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; company?: string }>;
 }) {
-  const [user, { status }] = await Promise.all([
+  const [user, { status, company }] = await Promise.all([
     getCurrentUser(),
     searchParams,
   ]);
@@ -27,6 +27,9 @@ export default async function NewApplicationPage({
   )
     ? (status as ApplicationStatus)
     : "saved";
+  const initialCompanyId = companies.some((option) => option.id === company)
+    ? company
+    : undefined;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
@@ -68,6 +71,7 @@ export default async function NewApplicationPage({
         <ApplicationForm
           companies={companies}
           initialStatus={initialStatus}
+          initialCompanyId={initialCompanyId}
           defaultCurrency={settings.defaultCurrency}
         />
       )}

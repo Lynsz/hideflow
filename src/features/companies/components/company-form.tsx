@@ -24,6 +24,7 @@ import {
 type CompanyFormProps = {
   companyId?: string;
   defaultValues?: CompanyFormValues;
+  cancelHref?: string;
 };
 
 const EMPTY_VALUES: CompanyFormValues = {
@@ -34,7 +35,11 @@ const EMPTY_VALUES: CompanyFormValues = {
   notes: "",
 };
 
-export function CompanyForm({ companyId, defaultValues }: CompanyFormProps) {
+export function CompanyForm({
+  companyId,
+  defaultValues,
+  cancelHref = "/dashboard/empresas",
+}: CompanyFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState("");
   const {
@@ -150,7 +155,7 @@ export function CompanyForm({ companyId, defaultValues }: CompanyFormProps) {
 
       <div className="border-border mt-6 flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:justify-end">
         <Link
-          href="/dashboard/empresas"
+          href={cancelHref}
           className={buttonStyles({ variant: "secondary" })}
         >
           Cancelar

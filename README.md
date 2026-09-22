@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 31 implementada no código — atualização de segurança das dependências, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 32 implementada no código — hub privado de detalhes da empresa, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -26,6 +26,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Redirect de usuários autenticados para `/dashboard`
 - Profile criado automaticamente por trigger após o cadastro
 - CRUD completo de empresas com busca e bloqueio de exclusão quando há candidaturas
+- Hub privado por empresa com indicadores, candidaturas, contatos e atalhos contextuais
 - CRUD completo de candidaturas com detalhes, busca, filtros, ordenação e paginação
 - Histórico automático e append-only de mudanças de status
 - Kanban responsivo com as 11 etapas oficiais, contadores e estados vazios
@@ -207,6 +208,7 @@ O ENUM foi escolhido porque o domínio é fechado, reutilizado e central para a 
 
 - `/dashboard/empresas`: pesquisa server-side por nome e listagem responsiva.
 - `/dashboard/empresas/nova`: cadastro com React Hook Form, Zod e Server Action.
+- `/dashboard/empresas/[id]`: hub privado com resumo do relacionamento, candidaturas, contatos e atalhos para novos registros já contextualizados.
 - `/dashboard/empresas/[id]/editar`: edição com ownership verificado no servidor.
 - A exclusão consulta candidaturas associadas e é bloqueada quando a empresa está em uso; a FK também usa `ON DELETE RESTRICT`.
 
@@ -708,6 +710,19 @@ O Next.js e seu preset de ESLint foram atualizados de 16.3.1 para 16.3.6 dentro 
 - O lockfile é a fonte reprodutível das versões indiretas corrigidas e deve ser mantido junto com o `package.json`.
 - A conclusão exige testes unitários, lint, formatação, geração de tipos de rota, verificação TypeScript, build de produção, smoke tests e `npm audit` sem vulnerabilidades.
 
+## Etapa 32: hub privado de detalhes da empresa
+
+Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O hub reúne os dados institucionais, todas as candidaturas carregadas no recorte, contatos vinculados e indicadores de processos ativos, etapas de entrevista e contratações. A listagem de empresas ganhou acesso direto ao hub; criar ou editar uma empresa retorna para esse contexto.
+
+### Dados, segurança e performance
+
+- A página é um Server Component protegido. O usuário é obtido da sessão SSR e todas as consultas repetem `user_id`, além de continuarem submetidas às policies RLS existentes.
+- Empresa, candidaturas e contatos são carregados em paralelo com seleção apenas dos campos exibidos. Nenhum relacionamento é resolvido com consultas por item.
+- O recorte de candidaturas é limitado às 200 atualizadas mais recentemente. Quando o total ultrapassa esse limite, a interface mantém o total exato e explica que os indicadores de estágio usam somente o recorte analisado.
+- IDs inexistentes e empresas de outra conta produzem o mesmo estado 404, sem revelar a existência de registros externos.
+- Os atalhos para nova candidatura e novo contato pré-selecionam a empresa apenas após validar o identificador entre as opções autorizadas do usuário.
+- A etapa é somente leitura sobre o modelo existente; não adiciona tabela, migration, dependência ou política.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -800,6 +815,7 @@ A suíte automatizada cobre:
 - prontidão contextual, itens condicionais por estágio, próximos passos futuros e exclusão de processos arquivados/finais;
 - agregação, filtros, resumo, ordenação e contextualização de links da central de prontidão;
 - denominadores aplicáveis, filtros por lacuna e ação contextual do mapa de prontidão;
+- resumo determinístico de candidaturas ativas, entrevistas e contratações no hub da empresa;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -852,6 +868,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 29:** central agregada de prontidão
 - [x] **Etapa 30:** mapa de lacunas da prontidão
 - [x] **Etapa 31:** atualização de segurança das dependências
+- [x] **Etapa 32:** hub privado de detalhes da empresa
 
 ## Licença
 

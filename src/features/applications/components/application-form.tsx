@@ -44,6 +44,7 @@ type ApplicationFormProps = {
   applicationId?: string;
   defaultValues?: ApplicationFormValues;
   initialStatus?: ApplicationStatus;
+  initialCompanyId?: string;
   defaultCurrency?: SupportedCurrency;
 };
 
@@ -60,6 +61,7 @@ export function ApplicationForm({
   applicationId,
   defaultValues,
   initialStatus = "saved",
+  initialCompanyId = "",
   defaultCurrency = "BRL",
 }: ApplicationFormProps) {
   const router = useRouter();
@@ -71,7 +73,7 @@ export function ApplicationForm({
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: defaultValues ?? {
-      companyId: "",
+      companyId: initialCompanyId,
       jobTitle: "",
       jobUrl: "",
       location: "",
