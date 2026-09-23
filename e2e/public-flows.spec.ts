@@ -102,6 +102,21 @@ test("protege o hub da empresa e preserva o destino", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("protege o portfólio de empresas e preserva os filtros", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dashboard/empresas?q=Acme&relationship=active&sort=activity",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fempresas%3Fq%3DAcme%26relationship%3Dactive%26sort%3Dactivity$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

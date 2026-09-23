@@ -38,3 +38,44 @@ export type CompanyDetail = {
   totalApplications: number;
   isApplicationListLimited: boolean;
 };
+
+export type CompanyRelationshipFilter =
+  "all" | "active" | "history" | "untracked";
+export type CompanyPortfolioSort = "name" | "activity" | "opportunities";
+
+export type CompanyPortfolioFilters = {
+  query: string;
+  relationship: CompanyRelationshipFilter;
+  sort: CompanyPortfolioSort;
+};
+
+export type CompanyPortfolioApplication = Pick<
+  Application,
+  "id" | "company_id" | "job_title" | "status" | "archived_at" | "updated_at"
+>;
+
+export type CompanyPortfolioContact = Pick<
+  Contact,
+  "id" | "company_id" | "updated_at"
+>;
+
+export type CompanyPortfolioItem = Company & {
+  applicationCount: number;
+  activeApplicationCount: number;
+  contactCount: number;
+  latestApplication: CompanyPortfolioApplication | null;
+  lastActivityAt: string;
+};
+
+export type CompanyPortfolioSummary = {
+  totalCompanies: number;
+  companiesWithActiveApplications: number;
+  activeApplications: number;
+  companiesWithContacts: number;
+};
+
+export type CompanyPortfolioResult = {
+  items: CompanyPortfolioItem[];
+  summary: CompanyPortfolioSummary;
+  isLimited: boolean;
+};

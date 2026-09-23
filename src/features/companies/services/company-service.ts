@@ -1,17 +1,28 @@
 import "server-only";
 
 import type { CompanyFormValues } from "@/features/companies/schemas/company-schema";
+import {
+  buildCompanyPortfolioItems,
+  filterAndSortCompanyPortfolio,
+  summarizeCompanyPortfolio,
+} from "@/features/companies/services/company-portfolio-rules";
 import type {
   Company,
   CompanyDetail,
   CompanyDetailApplication,
   CompanyDetailContact,
   CompanyOption,
+  CompanyPortfolioApplication,
+  CompanyPortfolioContact,
+  CompanyPortfolioFilters,
+  CompanyPortfolioResult,
 } from "@/features/companies/types/company";
 import { summarizeCompanyApplications } from "@/features/companies/services/company-detail-rules";
 import { createClient } from "@/lib/supabase/server";
 
 const COMPANY_APPLICATION_LIMIT = 200;
+const COMPANY_PORTFOLIO_LIMIT = 300;
+const COMPANY_PORTFOLIO_RELATION_LIMIT = 1_000;
 
 function emptyToNull(value: string) {
   return value === "" ? null : value;
@@ -27,22 +38,73 @@ function toCompanyPayload(values: CompanyFormValues) {
   };
 }
 
-export async function getCompanies(userId: string, search = "") {
+export async function getCompanyPortfolio(
+  userId: string,
+  filters: CompanyPortfolioFilters,
+): Promise<CompanyPortfolioResult> {
   const supabase = await createClient();
-  let query = supabase
+  let companiesQuery = supabase
     .from("companies")
     .select(
       "id, user_id, name, website, linkedin_url, location, notes, created_at, updated_at",
+      { count: "exact" },
     )
-    .eq("user_id", userId)
-    .order("name", { ascending: true });
+    .eq("user_id", userId);
 
-  if (search.trim()) query = query.ilike("name", `%${search.trim()}%`);
+  if (filters.query) {
+    companiesQuery = companiesQuery.ilike("name", `%${filters.query}%`);
+  }
 
-  const { data, error } = await query;
-  if (error) throw new Error("Não foi possível carregar as empresas.");
+  const companiesRequest = companiesQuery
+    .order("name", { ascending: true })
+    .range(0, COMPANY_PORTFOLIO_LIMIT - 1);
 
-  return data satisfies Company[];
+  const [companiesResult, applicationsResult, contactsResult] =
+    await Promise.all([
+      companiesRequest,
+      supabase
+        .from("applications")
+        .select("id, company_id, job_title, status, archived_at, updated_at", {
+          count: "exact",
+        })
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .range(0, COMPANY_PORTFOLIO_RELATION_LIMIT - 1),
+      supabase
+        .from("contacts")
+        .select("id, company_id, updated_at", { count: "exact" })
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .range(0, COMPANY_PORTFOLIO_RELATION_LIMIT - 1),
+    ]);
+
+  if (
+    companiesResult.error ||
+    applicationsResult.error ||
+    contactsResult.error
+  ) {
+    throw new Error("Não foi possível carregar o portfólio de empresas.");
+  }
+
+  const companies = companiesResult.data satisfies Company[];
+  const applications =
+    applicationsResult.data satisfies CompanyPortfolioApplication[];
+  const contacts = contactsResult.data satisfies CompanyPortfolioContact[];
+  const portfolio = buildCompanyPortfolioItems(
+    companies,
+    applications,
+    contacts,
+  );
+  const items = filterAndSortCompanyPortfolio(portfolio, filters);
+
+  return {
+    items,
+    summary: summarizeCompanyPortfolio(items),
+    isLimited:
+      (companiesResult.count ?? companies.length) > companies.length ||
+      (applicationsResult.count ?? applications.length) > applications.length ||
+      (contactsResult.count ?? contacts.length) > contacts.length,
+  };
 }
 
 export async function getCompanyOptions(userId: string) {

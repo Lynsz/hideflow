@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 32 implementada no código — hub privado de detalhes da empresa, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 33 implementada no código — visão de portfólio de empresas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -26,6 +26,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Redirect de usuários autenticados para `/dashboard`
 - Profile criado automaticamente por trigger após o cadastro
 - CRUD completo de empresas com busca e bloqueio de exclusão quando há candidaturas
+- Portfólio de empresas com métricas, filtros de relacionamento e ordenação por atividade ou oportunidades
 - Hub privado por empresa com indicadores, candidaturas, contatos e atalhos contextuais
 - CRUD completo de candidaturas com detalhes, busca, filtros, ordenação e paginação
 - Histórico automático e append-only de mudanças de status
@@ -206,7 +207,7 @@ O ENUM foi escolhido porque o domínio é fechado, reutilizado e central para a 
 
 ### Empresas
 
-- `/dashboard/empresas`: pesquisa server-side por nome e listagem responsiva.
+- `/dashboard/empresas`: portfólio server-side com pesquisa, métricas, filtros de relacionamento e ordenação.
 - `/dashboard/empresas/nova`: cadastro com React Hook Form, Zod e Server Action.
 - `/dashboard/empresas/[id]`: hub privado com resumo do relacionamento, candidaturas, contatos e atalhos para novos registros já contextualizados.
 - `/dashboard/empresas/[id]/editar`: edição com ownership verificado no servidor.
@@ -723,6 +724,18 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - Os atalhos para nova candidatura e novo contato pré-selecionam a empresa apenas após validar o identificador entre as opções autorizadas do usuário.
 - A etapa é somente leitura sobre o modelo existente; não adiciona tabela, migration, dependência ou política.
 
+## Etapa 33: visão de portfólio de empresas
+
+`/dashboard/empresas` agora funciona como uma visão comparativa dos relacionamentos. O recorte exibe empresas com processo ativo, somente histórico ou sem candidatura, pode ser ordenado por nome, atividade recente ou volume de oportunidades e mantém pesquisa, filtros e ordenação na URL. Os indicadores acompanham o recorte exibido e cada cartão resume candidaturas, processos ativos, contatos e a oportunidade mais recente.
+
+### Dados, segurança e performance
+
+- A página permanece como Server Component protegido e todas as leituras repetem o `user_id` da sessão, além das policies RLS.
+- Empresas, candidaturas e contatos são carregados em três consultas esparsas e paralelas; a agregação usa mapas em memória e não cria consultas por cartão.
+- O processamento considera até 300 empresas e os 1.000 registros mais recentes de cada relacionamento. A interface informa o limite e orienta refinar a pesquisa quando algum recorte o ultrapassa.
+- Pesquisa, filtros e ordenação são normalizados de forma determinística antes de chegar ao banco ou à interface.
+- A etapa reutiliza o modelo existente; não adiciona tabela, migration, dependência ou política.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -816,6 +829,7 @@ A suíte automatizada cobre:
 - agregação, filtros, resumo, ordenação e contextualização de links da central de prontidão;
 - denominadores aplicáveis, filtros por lacuna e ação contextual do mapa de prontidão;
 - resumo determinístico de candidaturas ativas, entrevistas e contratações no hub da empresa;
+- agregação, filtros, resumo e ordenação determinística do portfólio de empresas;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -869,6 +883,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 30:** mapa de lacunas da prontidão
 - [x] **Etapa 31:** atualização de segurança das dependências
 - [x] **Etapa 32:** hub privado de detalhes da empresa
+- [x] **Etapa 33:** visão de portfólio de empresas
 
 ## Licença
 
