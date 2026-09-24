@@ -117,6 +117,19 @@ test("protege o portfólio de empresas e preserva os filtros", async ({
   ).toBeVisible();
 });
 
+test("protege o hub do contato e preserva o destino", async ({ page }) => {
+  await page.goto(
+    "/dashboard/contatos/00000000-0000-4000-8000-000000000034?feedback=updated",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fcontatos%2F00000000-0000-4000-8000-000000000034%3Ffeedback%3Dupdated$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

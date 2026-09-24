@@ -15,10 +15,11 @@ export type InterviewActionResult = {
   message: string;
   redirectTo?: string;
 };
-function refresh(applicationId?: string) {
+function refresh(applicationId?: string, contactId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/entrevistas");
   if (applicationId) revalidatePath(`/dashboard/candidaturas/${applicationId}`);
+  if (contactId) revalidatePath(`/dashboard/contatos/${contactId}`);
 }
 
 export async function createInterview(
@@ -37,7 +38,7 @@ export async function createInterview(
       message:
         "Não foi possível criar a entrevista. Verifique a candidatura e o contato.",
     };
-  refresh(parsed.data.applicationId);
+  refresh(parsed.data.applicationId, parsed.data.contactId);
   return {
     success: true,
     message: "Entrevista criada com sucesso.",
@@ -65,7 +66,7 @@ export async function updateInterview(
       message:
         "Entrevista não encontrada, não autorizada ou contato incompatível.",
     };
-  refresh(parsed.data.applicationId);
+  refresh(parsed.data.applicationId, parsed.data.contactId);
   return {
     success: true,
     message:

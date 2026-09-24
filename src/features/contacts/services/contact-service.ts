@@ -1,8 +1,12 @@
 import "server-only";
 
 import type { ContactFormValues } from "@/features/contacts/schemas/contact-schema";
+import { summarizeContactRelationship } from "@/features/contacts/services/contact-detail-rules";
 import type {
+  ContactApplication,
+  ContactDetail,
   ContactFilters,
+  ContactInterview,
   ContactOption,
 } from "@/features/contacts/types/contact";
 import { createClient } from "@/lib/supabase/server";
@@ -12,6 +16,8 @@ const CONTACT_SELECT =
   `id, user_id, company_id, name, role, email, phone, linkedin_url, contact_type, notes, created_at, updated_at, company:companies!contacts_company_owner_fkey(id, name)` as const;
 const CONTACT_LIST_SELECT =
   `id, company_id, name, role, email, linkedin_url, contact_type, company:companies!contacts_company_owner_fkey(id, name)` as const;
+const CONTACT_APPLICATION_LIMIT = 200;
+const CONTACT_INTERVIEW_LIMIT = 200;
 
 const emptyToNull = (value: string) => (value === "" ? null : value);
 
@@ -110,6 +116,65 @@ export async function getContactById(userId: string, contactId: string) {
   return {
     ...contact.data,
     applications: links.data.map((link) => link.application),
+  };
+}
+
+export async function getContactDetail(
+  userId: string,
+  contactId: string,
+): Promise<ContactDetail | null> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+  const [contactResult, linksResult, interviewsResult] = await Promise.all([
+    supabase
+      .from("contacts")
+      .select(CONTACT_SELECT)
+      .eq("user_id", userId)
+      .eq("id", contactId)
+      .maybeSingle(),
+    supabase
+      .from("application_contacts")
+      .select(
+        "created_at, application:applications!application_contacts_application_owner_fkey(id, job_title, status, archived_at, updated_at)",
+        { count: "exact" },
+      )
+      .eq("user_id", userId)
+      .eq("contact_id", contactId)
+      .order("created_at", { ascending: false })
+      .range(0, CONTACT_APPLICATION_LIMIT - 1),
+    supabase
+      .from("interviews")
+      .select(
+        "id, application_id, type, scheduled_at, meeting_url, result, application:applications!interviews_application_owner_fkey(id, job_title, status)",
+        { count: "exact" },
+      )
+      .eq("user_id", userId)
+      .eq("contact_id", contactId)
+      .order("scheduled_at", { ascending: false })
+      .range(0, CONTACT_INTERVIEW_LIMIT - 1),
+  ]);
+
+  if (contactResult.error || linksResult.error || interviewsResult.error) {
+    throw new Error("Não foi possível carregar o relacionamento do contato.");
+  }
+  if (!contactResult.data) return null;
+
+  const applications = linksResult.data.map(
+    (link) => link.application,
+  ) satisfies ContactApplication[];
+  const interviews = interviewsResult.data satisfies ContactInterview[];
+  const totalApplications = linksResult.count ?? applications.length;
+  const totalInterviews = interviewsResult.count ?? interviews.length;
+
+  return {
+    ...contactResult.data,
+    applications,
+    interviews,
+    summary: summarizeContactRelationship(applications, interviews, now),
+    totalApplications,
+    totalInterviews,
+    isApplicationListLimited: totalApplications > applications.length,
+    isInterviewListLimited: totalInterviews > interviews.length,
   };
 }
 

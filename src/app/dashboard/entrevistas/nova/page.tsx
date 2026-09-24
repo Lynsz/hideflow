@@ -5,14 +5,15 @@ import { buttonStyles } from "@/components/ui/button";
 import { getCurrentUser } from "@/features/auth/services/get-current-user";
 import { getContactOptions } from "@/features/contacts/services/contact-service";
 import { InterviewForm } from "@/features/interviews/components/interview-form";
+import { resolveInterviewPreset } from "@/features/interviews/services/interview-presets";
 import { getInterviewApplicationOptions } from "@/features/interviews/services/interview-service";
 
 export default async function NewInterviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ application?: string }>;
+  searchParams: Promise<{ application?: string; contact?: string }>;
 }) {
-  const [{ application = "" }, user] = await Promise.all([
+  const [{ application = "", contact = "" }, user] = await Promise.all([
     searchParams,
     getCurrentUser(),
   ]);
@@ -20,9 +21,12 @@ export default async function NewInterviewPage({
     getInterviewApplicationOptions(user!.id),
     getContactOptions(user!.id),
   ]);
-  const selected = applications.some((item) => item.id === application)
-    ? application
-    : (applications[0]?.id ?? "");
+  const preset = resolveInterviewPreset(
+    applications,
+    contacts,
+    application,
+    contact,
+  );
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
       <Link
@@ -43,10 +47,10 @@ export default async function NewInterviewPage({
           applications={applications}
           contacts={contacts}
           defaultValues={{
-            applicationId: selected,
+            applicationId: preset.applicationId,
             type: "hr",
             scheduledAt: "",
-            contactId: "",
+            contactId: preset.contactId,
             interviewerName: "",
             meetingUrl: "",
             notes: "",

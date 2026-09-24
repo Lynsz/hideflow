@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 33 implementada no código — visão de portfólio de empresas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 34 implementada no código — hub privado de relacionamento do contato, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -34,6 +34,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Drag-and-drop por ponteiro e teclado, com alternativa acessível por select
 - Mudança otimista de status com rollback em falhas e proteção contra conflitos entre abas
 - CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
+- Hub privado por contato com indicadores, candidaturas, entrevistas e atalhos contextuais
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
 - Preparação estruturada por entrevista com pesquisa, histórias, perguntas e logística
 - Retrospectiva privada por entrevista com avaliação, aprendizados, perguntas recebidas e follow-up
@@ -736,6 +737,18 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - Pesquisa, filtros e ordenação são normalizados de forma determinística antes de chegar ao banco ou à interface.
 - A etapa reutiliza o modelo existente; não adiciona tabela, migration, dependência ou política.
 
+## Etapa 34: hub privado de relacionamento do contato
+
+`/dashboard/contatos/[id]` agora concentra o contexto profissional de cada contato. O hub apresenta a empresa vinculada, canais de comunicação, indicadores de processos e entrevistas, candidaturas associadas e o histórico de entrevistas em que a pessoa participou. Atalhos levam à empresa, às candidaturas, à preparação e à retrospectiva de cada entrevista.
+
+### Dados, segurança e performance
+
+- A página permanece como Server Component protegido e trata IDs inexistentes ou pertencentes a outra conta com o mesmo estado 404.
+- Contato, vínculos de candidaturas e entrevistas são lidos em paralelo, sempre repetindo `user_id` e selecionando apenas os campos exibidos.
+- Os totais usam contagem exata; listas e indicadores derivados analisam até 200 vínculos de cada categoria e informam esse limite quando necessário.
+- O atalho de nova entrevista envia candidatura e contato pela URL, mas ambos são novamente validados entre as opções autorizadas e precisam pertencer à mesma empresa antes da pré-seleção.
+- A etapa reutiliza tabelas, relações e policies existentes; não adiciona migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -830,6 +843,7 @@ A suíte automatizada cobre:
 - denominadores aplicáveis, filtros por lacuna e ação contextual do mapa de prontidão;
 - resumo determinístico de candidaturas ativas, entrevistas e contratações no hub da empresa;
 - agregação, filtros, resumo e ordenação determinística do portfólio de empresas;
+- resumo determinístico do relacionamento do contato e validação dos presets de entrevista;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -884,6 +898,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 31:** atualização de segurança das dependências
 - [x] **Etapa 32:** hub privado de detalhes da empresa
 - [x] **Etapa 33:** visão de portfólio de empresas
+- [x] **Etapa 34:** hub privado de relacionamento do contato
 
 ## Licença
 
