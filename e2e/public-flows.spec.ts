@@ -130,6 +130,21 @@ test("protege o hub do contato e preserva o destino", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("protege o portfólio de contatos e preserva os filtros", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dashboard/contatos?q=Ana&relationship=active&sort=activity",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fcontatos%3Fq%3DAna%26relationship%3Dactive%26sort%3Dactivity$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

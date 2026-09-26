@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 34 implementada no código — hub privado de relacionamento do contato, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 35 implementada no código — visão de portfólio de contatos, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -35,6 +35,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Mudança otimista de status com rollback em falhas e proteção contra conflitos entre abas
 - CRUD de contatos com busca, filtros, vínculos com empresas e candidaturas
 - Hub privado por contato com indicadores, candidaturas, entrevistas e atalhos contextuais
+- Portfólio de contatos com métricas, cobertura de vínculos, próxima entrevista e ordenação
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
 - Preparação estruturada por entrevista com pesquisa, histórias, perguntas e logística
 - Retrospectiva privada por entrevista com avaliação, aprendizados, perguntas recebidas e follow-up
@@ -264,7 +265,7 @@ Além do histórico, a migration da Etapa 3:
 
 ## Etapa 5: contatos, entrevistas e timeline
 
-- `/dashboard/contatos` oferece busca server-side por nome, cargo, email ou empresa e filtros por empresa e tipo.
+- `/dashboard/contatos` oferece um portfólio server-side com busca, métricas, filtros por empresa, tipo e vínculo, além de ordenação por atividade ou oportunidades.
 - Criação e edição reutilizam um formulário React Hook Form + Zod; detalhes expõem email, telefone e LinkedIn com links seguros.
 - A edição da empresa lista seus contatos e permite iniciar um cadastro já com a empresa selecionada.
 - A candidatura permite associar ou remover contatos da mesma empresa sem duplicar o registro original.
@@ -749,6 +750,18 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - O atalho de nova entrevista envia candidatura e contato pela URL, mas ambos são novamente validados entre as opções autorizadas e precisam pertencer à mesma empresa antes da pré-seleção.
 - A etapa reutiliza tabelas, relações e policies existentes; não adiciona migration, dependência ou privilégio.
 
+## Etapa 35: visão de portfólio de contatos
+
+`/dashboard/contatos` agora oferece uma leitura comparativa da rede profissional. Pesquisa, empresa, tipo, situação do vínculo e ordenação permanecem na URL. Cada cartão apresenta candidaturas, processos ativos, entrevistas, oportunidade mais recente, próxima entrevista e atalhos de comunicação.
+
+### Dados, segurança e performance
+
+- A página continua como Server Component protegido; todas as consultas repetem o `user_id` da sessão e permanecem submetidas às policies RLS.
+- Contatos, vínculos de candidaturas e entrevistas são carregados em consultas esparsas, com agregação linear por mapas e sem consultas por cartão.
+- O processamento considera até 300 contatos, 100 empresas correspondentes ao termo e os 1.000 vínculos mais recentes de cada relacionamento. A interface informa quando o limite exige um filtro mais específico.
+- Termos, UUIDs, tipos, relacionamentos e ordenação são normalizados antes das consultas; caracteres reservados da expressão de busca são neutralizados.
+- A etapa reutiliza o modelo existente e não adiciona migration, dependência ou política.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -844,6 +857,7 @@ A suíte automatizada cobre:
 - resumo determinístico de candidaturas ativas, entrevistas e contratações no hub da empresa;
 - agregação, filtros, resumo e ordenação determinística do portfólio de empresas;
 - resumo determinístico do relacionamento do contato e validação dos presets de entrevista;
+- agregação, filtros, resumo, próxima entrevista e ordenação determinística do portfólio de contatos;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
@@ -899,6 +913,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 32:** hub privado de detalhes da empresa
 - [x] **Etapa 33:** visão de portfólio de empresas
 - [x] **Etapa 34:** hub privado de relacionamento do contato
+- [x] **Etapa 35:** visão de portfólio de contatos
 
 ## Licença
 

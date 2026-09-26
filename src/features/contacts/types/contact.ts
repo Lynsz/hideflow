@@ -6,10 +6,56 @@ type Application = Database["public"]["Tables"]["applications"]["Row"];
 type Interview = Database["public"]["Tables"]["interviews"]["Row"];
 export type ContactWithCompany = Contact & { company: CompanyOption };
 export type ContactOption = Pick<Contact, "id" | "name" | "company_id">;
-export type ContactFilters = {
+export type ContactRelationshipFilter =
+  "all" | "active" | "interviewer" | "unlinked";
+export type ContactPortfolioSort = "name" | "activity" | "opportunities";
+export type ContactPortfolioFilters = {
   query: string;
   companyId: string;
-  contactType: string;
+  contactType: Exclude<Contact["contact_type"], null> | "";
+  relationship: ContactRelationshipFilter;
+  sort: ContactPortfolioSort;
+};
+export type ContactPortfolioContact = Pick<
+  Contact,
+  | "id"
+  | "company_id"
+  | "name"
+  | "role"
+  | "email"
+  | "linkedin_url"
+  | "contact_type"
+  | "updated_at"
+> & { company: CompanyOption };
+export type ContactPortfolioApplicationLink = {
+  contact_id: string;
+  application: Pick<
+    Application,
+    "id" | "job_title" | "status" | "archived_at" | "updated_at"
+  >;
+};
+export type ContactPortfolioInterview = Pick<
+  Interview,
+  "contact_id" | "scheduled_at" | "updated_at" | "result"
+>;
+export type ContactPortfolioItem = ContactPortfolioContact & {
+  applicationCount: number;
+  activeApplicationCount: number;
+  interviewCount: number;
+  latestApplication: ContactPortfolioApplicationLink["application"] | null;
+  nextInterviewAt: string | null;
+  lastActivityAt: string;
+};
+export type ContactPortfolioSummary = {
+  totalContacts: number;
+  contactsWithActiveApplications: number;
+  interviewers: number;
+  unlinkedContacts: number;
+};
+export type ContactPortfolioResult = {
+  items: ContactPortfolioItem[];
+  summary: ContactPortfolioSummary;
+  isLimited: boolean;
 };
 export type ContactApplication = Pick<
   Application,
