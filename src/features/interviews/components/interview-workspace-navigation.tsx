@@ -3,7 +3,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type InterviewWorkspaceTab = "preparation" | "debrief";
+type InterviewWorkspaceTab = "overview" | "preparation" | "debrief";
 
 export function InterviewWorkspaceNavigation({
   interviewId,
@@ -13,6 +13,11 @@ export function InterviewWorkspaceNavigation({
   active: InterviewWorkspaceTab;
 }) {
   const links = [
+    {
+      key: "overview" as const,
+      href: `/dashboard/entrevistas/${interviewId}`,
+      label: "Visão geral",
+    },
     {
       key: "preparation" as const,
       href: `/dashboard/entrevistas/${interviewId}/preparacao`,

@@ -145,6 +145,19 @@ test("protege o portfólio de contatos e preserva os filtros", async ({
   ).toBeVisible();
 });
 
+test("protege o hub da entrevista e preserva o destino", async ({ page }) => {
+  await page.goto(
+    "/dashboard/entrevistas/00000000-0000-4000-8000-000000000036?feedback=updated",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fentrevistas%2F00000000-0000-4000-8000-000000000036%3Ffeedback%3Dupdated$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

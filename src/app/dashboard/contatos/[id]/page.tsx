@@ -282,7 +282,7 @@ export default async function ContactDetailPage({
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
-                            href={`/dashboard/candidaturas/${interview.application.id}`}
+                            href={`/dashboard/entrevistas/${interview.id}`}
                             className="truncate text-sm font-medium hover:underline"
                           >
                             {interview.application.job_title}

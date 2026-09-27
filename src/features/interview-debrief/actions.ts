@@ -47,6 +47,7 @@ export async function saveInterviewDebrief(
   }
 
   revalidatePath(`/dashboard/entrevistas/${parsedId.data}/retrospectiva`);
+  revalidatePath(`/dashboard/entrevistas/${parsedId.data}`);
   revalidatePath(`/dashboard/candidaturas/${result.applicationId}`);
   return { success: true, message: "Retrospectiva salva com sucesso." };
 }

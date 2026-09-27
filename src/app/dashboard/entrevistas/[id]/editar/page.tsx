@@ -26,11 +26,11 @@ export default async function EditInterviewPage({
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:px-8 md:py-8">
       <Link
-        href="/dashboard/entrevistas"
+        href={`/dashboard/entrevistas/${id}`}
         className={buttonStyles({ variant: "ghost", className: "-ml-3" })}
       >
         <ArrowLeft className="size-4" />
-        Voltar para entrevistas
+        Voltar para a visão geral
       </Link>
       <header className="mt-5 mb-7">
         <h1 className="text-2xl font-semibold sm:text-3xl">

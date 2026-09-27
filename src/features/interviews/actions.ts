@@ -15,9 +15,14 @@ export type InterviewActionResult = {
   message: string;
   redirectTo?: string;
 };
-function refresh(applicationId?: string, contactId?: string) {
+function refresh(
+  interviewId?: string,
+  applicationId?: string,
+  contactId?: string,
+) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/entrevistas");
+  if (interviewId) revalidatePath(`/dashboard/entrevistas/${interviewId}`);
   if (applicationId) revalidatePath(`/dashboard/candidaturas/${applicationId}`);
   if (contactId) revalidatePath(`/dashboard/contatos/${contactId}`);
 }
@@ -38,11 +43,11 @@ export async function createInterview(
       message:
         "Não foi possível criar a entrevista. Verifique a candidatura e o contato.",
     };
-  refresh(parsed.data.applicationId, parsed.data.contactId);
+  refresh(data.id, parsed.data.applicationId, parsed.data.contactId);
   return {
     success: true,
     message: "Entrevista criada com sucesso.",
-    redirectTo: "/dashboard/entrevistas?feedback=created",
+    redirectTo: `/dashboard/entrevistas/${data.id}?feedback=created`,
   };
 }
 export async function updateInterview(
@@ -66,17 +71,14 @@ export async function updateInterview(
       message:
         "Entrevista não encontrada, não autorizada ou contato incompatível.",
     };
-  refresh(parsed.data.applicationId, parsed.data.contactId);
+  refresh(interviewId, parsed.data.applicationId, parsed.data.contactId);
   return {
     success: true,
     message:
       parsed.data.result === "scheduled"
         ? "Entrevista atualizada com sucesso."
         : "Resultado da entrevista atualizado.",
-    redirectTo:
-      parsed.data.result === "scheduled"
-        ? "/dashboard/entrevistas?feedback=updated"
-        : "/dashboard/entrevistas?feedback=result",
+    redirectTo: `/dashboard/entrevistas/${interviewId}?feedback=${parsed.data.result === "scheduled" ? "updated" : "result"}`,
   };
 }
 export async function deleteInterview(
@@ -92,7 +94,7 @@ export async function deleteInterview(
       success: false,
       message: "Entrevista não encontrada ou não autorizada.",
     };
-  refresh(applicationId);
+  refresh(undefined, applicationId);
   return {
     success: true,
     message: "Entrevista excluída com sucesso.",

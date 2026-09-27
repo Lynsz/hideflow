@@ -44,6 +44,7 @@ export async function saveInterviewPreparation(
   }
 
   revalidatePath(`/dashboard/entrevistas/${parsedId.data}/preparacao`);
+  revalidatePath(`/dashboard/entrevistas/${parsedId.data}`);
   revalidatePath(`/dashboard/candidaturas/${result.applicationId}`);
   return { success: true, message: "Preparação salva com sucesso." };
 }

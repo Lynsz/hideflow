@@ -1,6 +1,7 @@
 import {
   ClipboardCheck,
   ExternalLink,
+  LayoutDashboard,
   MessageSquareText,
   Pencil,
 } from "lucide-react";
@@ -54,21 +55,22 @@ export function InterviewCard({ interview }: { interview: InterviewListItem }) {
         </div>
         <div className="flex shrink-0 flex-wrap items-start gap-1">
           <Link
-            href={`/dashboard/candidaturas/${interview.application_id}`}
-            className={buttonStyles({ variant: "ghost", size: "sm" })}
+            href={`/dashboard/entrevistas/${interview.id}`}
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
           >
-            Candidatura
+            <LayoutDashboard className="size-3.5" aria-hidden="true" />
+            Visão geral
           </Link>
           <Link
             href={`/dashboard/entrevistas/${interview.id}/preparacao`}
-            className={buttonStyles({ variant: "secondary", size: "sm" })}
+            className={buttonStyles({ variant: "ghost", size: "sm" })}
           >
             <ClipboardCheck className="size-3.5" aria-hidden="true" />
             Preparar
           </Link>
           <Link
             href={`/dashboard/entrevistas/${interview.id}/retrospectiva`}
-            className={buttonStyles({ variant: "secondary", size: "sm" })}
+            className={buttonStyles({ variant: "ghost", size: "sm" })}
           >
             <MessageSquareText className="size-3.5" aria-hidden="true" />
             Retrospectiva

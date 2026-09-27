@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 35 implementada no código — visão de portfólio de contatos, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 36 implementada no código — hub privado da entrevista, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -37,6 +37,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Hub privado por contato com indicadores, candidaturas, entrevistas e atalhos contextuais
 - Portfólio de contatos com métricas, cobertura de vínculos, próxima entrevista e ordenação
 - CRUD de entrevistas com contatos opcionais, nome manual, agenda e resultados controlados
+- Hub privado por entrevista com contexto, progresso da preparação, retrospectiva e follow-up
 - Preparação estruturada por entrevista com pesquisa, histórias, perguntas e logística
 - Retrospectiva privada por entrevista com avaliação, aprendizados, perguntas recebidas e follow-up
 - Central de aprendizados com cobertura, avaliação média, distribuição, filtros e histórico de retrospectivas
@@ -270,6 +271,7 @@ Além do histórico, a migration da Etapa 3:
 - A edição da empresa lista seus contatos e permite iniciar um cadastro já com a empresa selecionada.
 - A candidatura permite associar ou remover contatos da mesma empresa sem duplicar o registro original.
 - `/dashboard/entrevistas` separa próximas entrevistas das anteriores e permite criar, editar, excluir e registrar resultados.
+- `/dashboard/entrevistas/[id]` reúne contexto, anotações e progresso da preparação, retrospectiva e agradecimento.
 - O entrevistador pode ser um contato da empresa da candidatura ou um nome manual. O banco reforça essa consistência além da validação da interface.
 - O dashboard mantém “Candidaturas em entrevista” como métrica do pipeline e adiciona “Entrevistas próximas” baseada nos registros reais da agenda.
 
@@ -762,6 +764,18 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - Termos, UUIDs, tipos, relacionamentos e ordenação são normalizados antes das consultas; caracteres reservados da expressão de busca são neutralizados.
 - A etapa reutiliza o modelo existente e não adiciona migration, dependência ou política.
 
+## Etapa 36: hub privado da entrevista
+
+`/dashboard/entrevistas/[id]` agora é o ponto central de cada encontro. A visão geral reúne o contexto da candidatura, empresa e entrevistador, acesso à reunião e edição, anotações gerais e o progresso das áreas de preparação e retrospectiva. A navegação entre as três telas permanece visível e criar ou editar uma entrevista retorna diretamente ao hub.
+
+### Dados, segurança e performance
+
+- A página é um Server Component protegido e trata identificadores inválidos, inexistentes ou pertencentes a outra conta com o mesmo estado 404.
+- Entrevista, preparação e retrospectiva são carregadas em paralelo; as três consultas repetem o `user_id` da sessão e continuam submetidas às policies RLS.
+- Os indicadores reutilizam os calculadores já testados das etapas 22 e 23. Nenhum conteúdo privado adicional é serializado para um Client Component.
+- Salvar preparação ou retrospectiva também revalida a visão geral, mantendo os indicadores sincronizados sem estado duplicado.
+- A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -859,6 +873,7 @@ A suíte automatizada cobre:
 - resumo determinístico do relacionamento do contato e validação dos presets de entrevista;
 - agregação, filtros, resumo, próxima entrevista e ordenação determinística do portfólio de contatos;
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
+- progresso da retrospectiva e proteção do destino do hub privado da entrevista;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -914,6 +929,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 33:** visão de portfólio de empresas
 - [x] **Etapa 34:** hub privado de relacionamento do contato
 - [x] **Etapa 35:** visão de portfólio de contatos
+- [x] **Etapa 36:** hub privado da entrevista
 
 ## Licença
 
