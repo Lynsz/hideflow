@@ -41,6 +41,21 @@ test("redireciona visitante de rota protegida para o login", async ({
   ).toBeVisible();
 });
 
+test("protege o portfólio de candidaturas e preserva os filtros", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dashboard/candidaturas?q=Acme&status=screening&archive=active",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fcandidaturas%3Fq%3DAcme%26status%3Dscreening%26archive%3Dactive$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege a central de aprendizados e preserva os filtros", async ({
   page,
 }) => {
