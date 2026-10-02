@@ -56,6 +56,17 @@ test("protege o portfólio de candidaturas e preserva os filtros", async ({
   ).toBeVisible();
 });
 
+test("protege a central de lembretes e preserva o filtro", async ({ page }) => {
+  await page.goto("/dashboard/lembretes?status=overdue");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Flembretes%3Fstatus%3Doverdue$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege a central de aprendizados e preserva os filtros", async ({
   page,
 }) => {
