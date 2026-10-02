@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 37 implementada no código — portfólio de entrevistas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 38 implementada no código — resumo do portfólio de candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -28,7 +28,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - CRUD completo de empresas com busca e bloqueio de exclusão quando há candidaturas
 - Portfólio de empresas com métricas, filtros de relacionamento e ordenação por atividade ou oportunidades
 - Hub privado por empresa com indicadores, candidaturas, contatos e atalhos contextuais
-- CRUD completo de candidaturas com detalhes, busca, filtros, ordenação e paginação
+- Portfólio de candidaturas com indicadores globais, detalhes, busca, filtros, ordenação e paginação
 - Histórico automático e append-only de mudanças de status
 - Kanban responsivo com as 11 etapas oficiais, contadores e estados vazios
 - Drag-and-drop por ponteiro e teclado, com alternativa acessível por select
@@ -790,6 +790,19 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - Os indicadores derivam dos mesmos campos das áreas de preparação e retrospectiva, sem persistir contadores que possam ficar desatualizados.
 - A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
 
+## Etapa 38: resumo do portfólio de candidaturas
+
+`/dashboard/candidaturas` agora começa com uma leitura global do pipeline antes da listagem paginada. Os indicadores apresentam candidaturas ativas, processos em etapas de entrevista, propostas e contratações, enquanto a tabela e os cartões móveis preservam a busca, os filtros, a ordenação, o arquivamento e a paginação existentes.
+
+### Dados, segurança e performance
+
+- A página permanece um Server Component protegido e não envia as consultas de resumo ao navegador.
+- As quatro métricas usam contagens exatas com `head: true`, sem transferir linhas que não serão exibidas.
+- Cada consulta repete o `user_id` da sessão e mantém a separação entre candidaturas ativas, arquivadas e resultados finais sob as policies RLS existentes.
+- O resumo é global e estável entre páginas e filtros; o total da listagem continua representando somente o recorte selecionado.
+- A consulta paginada e o resumo são resolvidos em paralelo após a identificação das empresas correspondentes à busca.
+- A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -889,6 +902,7 @@ A suíte automatizada cobre:
 - validação, normalização e progresso das cinco seções de preparação de entrevista;
 - progresso da retrospectiva e proteção do destino do hub privado da entrevista;
 - agregação, filtros, progresso, resumo e ordenação determinística do portfólio de entrevistas;
+- proteção da rota e preservação dos filtros do portfólio de candidaturas;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -946,6 +960,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 35:** visão de portfólio de contatos
 - [x] **Etapa 36:** hub privado da entrevista
 - [x] **Etapa 37:** visão de portfólio de entrevistas
+- [x] **Etapa 38:** resumo do portfólio de candidaturas
 
 ## Licença
 
