@@ -15,3 +15,17 @@ export type ReminderListItem = Pick<
 > & {
   application: ReminderApplicationOption;
 };
+
+export type ReminderPortfolioSummary = {
+  open: number;
+  overdue: number;
+  dueSoon: number;
+  completed: number;
+};
+
+export type ReminderPortfolioResult = {
+  items: ReminderListItem[];
+  now: string;
+  summary: ReminderPortfolioSummary;
+  isLimited: boolean;
+};
