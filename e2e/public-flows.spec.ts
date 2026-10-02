@@ -67,6 +67,19 @@ test("protege a central de lembretes e preserva o filtro", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("protege o portfólio de propostas e preserva o filtro", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/ofertas?state=due_soon");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fofertas%3Fstate%3Ddue_soon$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege a central de aprendizados e preserva os filtros", async ({
   page,
 }) => {
