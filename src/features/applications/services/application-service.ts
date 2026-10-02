@@ -1,13 +1,16 @@
 import "server-only";
 
 import {
+  ACTIVE_APPLICATION_STATUSES,
   APPLICATION_PAGE_SIZE,
+  INTERVIEW_APPLICATION_STATUSES,
   KANBAN_APPLICATION_LIMIT,
 } from "@/features/applications/constants";
 import type { ApplicationFormValues } from "@/features/applications/schemas/application-schema";
 import type {
   ApplicationDetail,
   ApplicationFilters,
+  ApplicationPortfolioSummary,
   KanbanApplicationsResult,
   PaginatedApplications,
 } from "@/features/applications/types/application";
@@ -85,11 +88,60 @@ function toApplicationPayload(values: ApplicationFormValues) {
   };
 }
 
+async function getApplicationPortfolioSummary(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ApplicationPortfolioSummary> {
+  const [activeResult, interviewResult, offerResult, hireResult] =
+    await Promise.all([
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .in("status", [...ACTIVE_APPLICATION_STATUSES]),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .in("status", [...INTERVIEW_APPLICATION_STATUSES]),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .eq("status", "offer"),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "hired"),
+    ]);
+
+  if (
+    activeResult.error ||
+    interviewResult.error ||
+    offerResult.error ||
+    hireResult.error
+  ) {
+    throw new Error("Não foi possível carregar o resumo das candidaturas.");
+  }
+
+  return {
+    activeApplications: activeResult.count ?? 0,
+    interviewApplications: interviewResult.count ?? 0,
+    offers: offerResult.count ?? 0,
+    hires: hireResult.count ?? 0,
+  };
+}
+
 export async function getApplications(
   userId: string,
   filters: ApplicationFilters,
-): Promise<PaginatedApplications> {
+): Promise<PaginatedApplications & { summary: ApplicationPortfolioSummary }> {
   const supabase = await createClient();
+  const summaryPromise = getApplicationPortfolioSummary(supabase, userId);
   let matchingCompanyIds: string[] = [];
 
   if (filters.query) {
@@ -140,9 +192,12 @@ export async function getApplications(
   }
 
   const from = (filters.page - 1) * APPLICATION_PAGE_SIZE;
-  const { data, count, error } = await query
-    .order("id", { ascending: true })
-    .range(from, from + APPLICATION_PAGE_SIZE - 1);
+  const [{ data, count, error }, summary] = await Promise.all([
+    query
+      .order("id", { ascending: true })
+      .range(from, from + APPLICATION_PAGE_SIZE - 1),
+    summaryPromise,
+  ]);
 
   if (error) throw new Error("Não foi possível carregar as candidaturas.");
 
@@ -152,6 +207,7 @@ export async function getApplications(
     total,
     totalPages: Math.max(1, Math.ceil(total / APPLICATION_PAGE_SIZE)),
     page: filters.page,
+    summary,
   };
 }
 
