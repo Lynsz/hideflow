@@ -158,6 +158,21 @@ test("protege o hub da entrevista e preserva o destino", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("protege o portfólio de entrevistas e preserva os filtros", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dashboard/entrevistas?q=Acme&state=upcoming&focus=preparation&sort=next",
+  );
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Fentrevistas%3Fq%3DAcme%26state%3Dupcoming%26focus%3Dpreparation%26sort%3Dnext$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege o download de dados sem sessão", async ({ request }) => {
   const response = await request.get(
     "/dashboard/configuracoes/exportar?format=json",

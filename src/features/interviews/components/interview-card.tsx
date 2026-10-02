@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   ClipboardCheck,
   ExternalLink,
   LayoutDashboard,
@@ -14,9 +15,55 @@ import {
   formatInterviewResult,
   formatInterviewType,
 } from "@/features/interviews/constants";
-import type { InterviewListItem } from "@/features/interviews/types/interview";
+import type { InterviewPortfolioItem } from "@/features/interviews/types/interview";
 
-export function InterviewCard({ interview }: { interview: InterviewListItem }) {
+const STATE_LABELS: Record<InterviewPortfolioItem["state"], string> = {
+  upcoming: "Próxima",
+  awaiting: "Aguardando atualização",
+  finished: "Finalizada",
+};
+
+function ProgressIndicator({
+  label,
+  completed,
+  total,
+  percentage,
+}: {
+  label: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}) {
+  return (
+    <div className="bg-muted/40 rounded-lg p-3">
+      <div className="flex items-center justify-between gap-2 text-[10px]">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium">
+          {completed}/{total}
+        </span>
+      </div>
+      <div
+        className="bg-muted mt-2 h-1.5 overflow-hidden rounded-full"
+        role="progressbar"
+        aria-label={`Progresso de ${label.toLowerCase()}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percentage}
+      >
+        <div
+          className="bg-accent h-full rounded-full"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function InterviewCard({
+  interview,
+}: {
+  interview: InterviewPortfolioItem;
+}) {
   return (
     <article className="border-border bg-surface rounded-xl border p-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row">
@@ -25,6 +72,9 @@ export function InterviewCard({ interview }: { interview: InterviewListItem }) {
             <h3 className="font-medium">{interview.application.job_title}</h3>
             <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[10px]">
               {formatInterviewResult(interview.result)}
+            </span>
+            <span className="border-border text-muted-foreground rounded-full border px-2 py-1 text-[10px]">
+              {STATE_LABELS[interview.state]}
             </span>
           </div>
           <p className="text-muted-foreground mt-1 text-xs">
@@ -52,6 +102,29 @@ export function InterviewCard({ interview }: { interview: InterviewListItem }) {
               <ExternalLink className="size-3" />
             </a>
           )}
+          <div className="mt-4 grid max-w-xl gap-2 sm:grid-cols-2">
+            <ProgressIndicator
+              label="Preparação"
+              completed={interview.preparationCompleted}
+              total={interview.preparationTotal}
+              percentage={interview.preparationPercentage}
+            />
+            <ProgressIndicator
+              label="Retrospectiva"
+              completed={interview.debriefCompleted}
+              total={interview.debriefTotal}
+              percentage={interview.debriefPercentage}
+            />
+          </div>
+          {interview.thankYouPending ? (
+            <p className="text-muted-foreground mt-3 flex items-center gap-1.5 text-xs">
+              <AlertCircle
+                className="text-accent size-3.5"
+                aria-hidden="true"
+              />
+              Agradecimento ainda não registrado
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-start gap-1">
           <Link
