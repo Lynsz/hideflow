@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 39 implementada no código — visão operacional de lembretes, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 40 implementada no código — portfólio operacional de propostas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -59,7 +59,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Agenda unificada de entrevistas e lembretes com download em iCalendar
 - Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
 - Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
-- Registro de propostas e comparação de remuneração, bônus e condições
+- Portfólio de propostas com prazos de decisão, filtros e comparação de remuneração, bônus e condições
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
 - Metas privadas de candidaturas, follow-ups e contatos com janela comparativa de sete dias
 - Revisão semanal privada com resultados reais, reflexão manual e histórico por semana
@@ -816,6 +816,19 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - A interface avisa quando o filtro ultrapassa o limite visível, sem apresentar a amostra como se fosse o conjunto completo.
 - A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
 
+## Etapa 40: portfólio operacional de propostas
+
+`/dashboard/ofertas` agora combina a comparação financeira existente com uma fila de decisão. Os indicadores apresentam propostas registradas, negociações abertas, prazos nos próximos sete dias e prazos vencidos; filtros por situação permanecem na URL e a ordenação prioriza vencimentos antes das demais propostas.
+
+### Dados, segurança e performance
+
+- A classificação é derivada da situação atual da candidatura, do arquivamento e do prazo civil da proposta; nenhum estado paralelo é persistido.
+- Propostas com candidatura fora de `offer` ou arquivada são tratadas como encerradas, sem aparecer entre as decisões pendentes.
+- Valores permanecem separados por moeda. O portfólio não soma BRL, USD, EUR e GBP em um total sem significado financeiro.
+- A consulta repete o `user_id` da sessão, continua submetida às policies RLS e seleciona somente os campos exibidos ou necessários à classificação.
+- A leitura considera até 300 propostas recentes e informa explicitamente quando esse limite é atingido.
+- A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -917,6 +930,7 @@ A suíte automatizada cobre:
 - agregação, filtros, progresso, resumo e ordenação determinística do portfólio de entrevistas;
 - proteção da rota e preservação dos filtros do portfólio de candidaturas;
 - classificação de lembretes e proteção da central com preservação do filtro;
+- classificação, resumo, filtros e ordenação determinística do portfólio de propostas;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -976,6 +990,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 37:** visão de portfólio de entrevistas
 - [x] **Etapa 38:** resumo do portfólio de candidaturas
 - [x] **Etapa 39:** visão operacional de lembretes
+- [x] **Etapa 40:** portfólio operacional de propostas
 
 ## Licença
 
