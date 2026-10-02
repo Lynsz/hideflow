@@ -1,10 +1,15 @@
 import {
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
+  FileCheck2,
   Plus,
   Search,
+  Send,
   SlidersHorizontal,
+  Trophy,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { buttonStyles } from "@/components/ui/button";
@@ -44,6 +49,26 @@ const FEEDBACK: Record<string, string> = {
   archived: "Candidatura arquivada sem excluir seus dados.",
   restored: "Candidatura restaurada para a lista ativa.",
 };
+
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+}) {
+  return (
+    <article className="border-border bg-surface rounded-xl border p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-xs">{label}</p>
+        <Icon className="text-accent size-4" aria-hidden="true" />
+      </div>
+      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em]">{value}</p>
+    </article>
+  );
+}
 
 function ArchivedBadge() {
   return (
@@ -126,10 +151,10 @@ export default async function ApplicationsPage({
         <div>
           <p className="text-muted-foreground text-xs font-medium">Pipeline</p>
           <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
-            Candidaturas
+            Portfólio de candidaturas
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">
-            Pesquise, filtre e acompanhe todas as suas oportunidades.
+            Acompanhe o volume, o avanço e os resultados das suas oportunidades.
           </p>
         </div>
         <Link href="/dashboard/candidaturas/nova" className={buttonStyles()}>
@@ -143,6 +168,32 @@ export default async function ApplicationsPage({
           <FormFeedback kind="success" message={FEEDBACK[feedback]} />
         </div>
       ) : null}
+
+      <section
+        className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Resumo do portfólio"
+      >
+        <MetricCard
+          label="Candidaturas ativas"
+          value={result.summary.activeApplications}
+          icon={Send}
+        />
+        <MetricCard
+          label="Em etapas de entrevista"
+          value={result.summary.interviewApplications}
+          icon={CalendarClock}
+        />
+        <MetricCard
+          label="Com proposta"
+          value={result.summary.offers}
+          icon={FileCheck2}
+        />
+        <MetricCard
+          label="Contratações"
+          value={result.summary.hires}
+          icon={Trophy}
+        />
+      </section>
 
       <form
         className="border-border bg-surface mt-6 rounded-xl border p-4"
