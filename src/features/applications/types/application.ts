@@ -63,6 +63,13 @@ export type PaginatedApplications = {
   page: number;
 };
 
+export type ApplicationPortfolioSummary = {
+  activeApplications: number;
+  interviewApplications: number;
+  offers: number;
+  hires: number;
+};
+
 export type KanbanApplication = Pick<
   Application,
   | "id"
