@@ -2,8 +2,11 @@ import "server-only";
 
 import type { ReminderFilter } from "@/features/reminders/constants";
 import type { ReminderMutationValues } from "@/features/reminders/schemas/reminder-schema";
+import type { ReminderPortfolioResult } from "@/features/reminders/types/reminder";
 import { createClient } from "@/lib/supabase/server";
 
+const REMINDER_LIST_LIMIT = 300;
+const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1_000;
 const REMINDER_SELECT =
   "id, application_id, title, notes, due_at, completed_at, application:applications!reminders_application_owner_fkey(id, job_title, company:companies!applications_company_owner_fkey(id, name))" as const;
 
@@ -13,11 +16,14 @@ export async function getReminders(
   userId: string,
   filter: ReminderFilter,
   now = new Date().toISOString(),
-) {
+): Promise<ReminderPortfolioResult> {
   const supabase = await createClient();
+  const dueSoonEnd = new Date(
+    new Date(now).getTime() + SEVEN_DAYS_IN_MS,
+  ).toISOString();
   let query = supabase
     .from("reminders")
-    .select(REMINDER_SELECT)
+    .select(REMINDER_SELECT, { count: "exact" })
     .eq("user_id", userId);
 
   if (filter === "pending") {
@@ -28,12 +34,64 @@ export async function getReminders(
     query = query.not("completed_at", "is", null);
   }
 
-  const { data, error } = await query
-    .order("due_at", { ascending: filter !== "completed" })
-    .order("id", { ascending: true });
+  const [
+    listResult,
+    openResult,
+    overdueResult,
+    dueSoonResult,
+    completedResult,
+  ] = await Promise.all([
+    query
+      .order("due_at", { ascending: filter !== "completed" })
+      .order("id", { ascending: true })
+      .range(0, REMINDER_LIST_LIMIT - 1),
+    supabase
+      .from("reminders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("completed_at", null),
+    supabase
+      .from("reminders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("completed_at", null)
+      .lt("due_at", now),
+    supabase
+      .from("reminders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("completed_at", null)
+      .gte("due_at", now)
+      .lte("due_at", dueSoonEnd),
+    supabase
+      .from("reminders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .not("completed_at", "is", null),
+  ]);
 
-  if (error) throw new Error("Não foi possível carregar os lembretes.");
-  return { items: data, now };
+  if (
+    listResult.error ||
+    openResult.error ||
+    overdueResult.error ||
+    dueSoonResult.error ||
+    completedResult.error
+  ) {
+    throw new Error("Não foi possível carregar os lembretes.");
+  }
+
+  const total = listResult.count ?? listResult.data.length;
+  return {
+    items: listResult.data,
+    now,
+    summary: {
+      open: openResult.count ?? 0,
+      overdue: overdueResult.count ?? 0,
+      dueSoon: dueSoonResult.count ?? 0,
+      completed: completedResult.count ?? 0,
+    },
+    isLimited: total > listResult.data.length,
+  };
 }
 
 export async function getReminderById(userId: string, reminderId: string) {
