@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 38 implementada no código — resumo do portfólio de candidaturas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 39 implementada no código — visão operacional de lembretes, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -48,7 +48,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Busca e filtros combináveis no Kanban, representados na URL
 - Dashboard com identidade, métricas, foco operacional e candidaturas recentes reais
 - Analytics com período/empresa, KPIs de conversão, funil, tendências, fontes, salários e cobertura dos dados
-- Lembretes com prazo, filtros de situação, conclusão, reabertura e vínculo seguro com candidaturas
+- Central de lembretes com indicadores, prazo, filtros de situação, conclusão, reabertura e vínculo seguro com candidaturas
 - Resumo de pendências e próximo follow-up no dashboard
 - Tecnologias estruturadas, reutilizáveis e normalizadas por usuário
 - Ranking de tecnologias e cobertura das tags no Analytics
@@ -803,6 +803,19 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - A consulta paginada e o resumo são resolvidos em paralelo após a identificação das empresas correspondentes à busca.
 - A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
 
+## Etapa 39: visão operacional de lembretes
+
+`/dashboard/lembretes` agora apresenta uma leitura operacional antes da lista filtrada. Os indicadores mostram itens em aberto, atrasados, vencendo nos próximos sete dias e concluídos; as abas continuam preservando o filtro na URL e cada cartão mantém as ações existentes de conclusão, reabertura, edição e exclusão.
+
+### Dados, segurança e performance
+
+- A página permanece um Server Component protegido e calcula a janela móvel de sete dias a partir do mesmo instante usado para classificar os cartões.
+- As quatro métricas usam contagens exatas com `head: true`, sem transferir linhas desnecessárias para o servidor ou para o navegador.
+- Todas as consultas repetem o `user_id` da sessão e continuam submetidas às policies RLS existentes.
+- Lista e indicadores são carregados em paralelo. A listagem é limitada aos primeiros 300 registros ordenados, enquanto as contagens continuam globais e exatas.
+- A interface avisa quando o filtro ultrapassa o limite visível, sem apresentar a amostra como se fosse o conjunto completo.
+- A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -903,6 +916,7 @@ A suíte automatizada cobre:
 - progresso da retrospectiva e proteção do destino do hub privado da entrevista;
 - agregação, filtros, progresso, resumo e ordenação determinística do portfólio de entrevistas;
 - proteção da rota e preservação dos filtros do portfólio de candidaturas;
+- classificação de lembretes e proteção da central com preservação do filtro;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -961,6 +975,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 36:** hub privado da entrevista
 - [x] **Etapa 37:** visão de portfólio de entrevistas
 - [x] **Etapa 38:** resumo do portfólio de candidaturas
+- [x] **Etapa 39:** visão operacional de lembretes
 
 ## Licença
 
