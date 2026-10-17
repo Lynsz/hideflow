@@ -38,7 +38,8 @@ export function filterAndSortActivityPortfolio(
     .filter((item) => {
       if (filter === "all") return true;
       if (filter === "outreach") return isOutreach(item);
-      return item.activity_type === filter.slice(0, -1);
+      if (filter === "notes") return item.activity_type === "note";
+      return item.activity_type === filter;
     })
     .toSorted((left, right) => {
       const byOccurredAt = right.occurred_at.localeCompare(left.occurred_at);
