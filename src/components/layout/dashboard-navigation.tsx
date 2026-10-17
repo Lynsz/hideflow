@@ -68,6 +68,11 @@ const navigationItems: NavigationItem[] = [
     icon: FileStack,
   },
   {
+    label: "Interações",
+    href: "/dashboard/interacoes",
+    icon: MessageSquareText,
+  },
+  {
     label: "Entrevistas",
     href: "/dashboard/entrevistas",
     icon: CalendarClock,
