@@ -80,6 +80,19 @@ test("protege o portfólio de propostas e preserva o filtro", async ({
   ).toBeVisible();
 });
 
+test("protege a central de interações e preserva o filtro", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/interacoes?type=outreach");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Finteracoes%3Ftype%3Doutreach$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege a central de aprendizados e preserva os filtros", async ({
   page,
 }) => {
