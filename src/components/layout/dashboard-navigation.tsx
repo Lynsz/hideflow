@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ListChecks,
   HandCoins,
+  MessageSquareText,
   Search,
   Settings,
   SquareKanban,
