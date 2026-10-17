@@ -1,9 +1,46 @@
 import "server-only";
 
 import type { ActivityMutationValues } from "@/features/activities/schemas/activity-schema";
+import {
+  filterAndSortActivityPortfolio,
+  summarizeActivityPortfolio,
+} from "@/features/activities/services/activity-portfolio-rules";
+import type {
+  ActivityPortfolioFilter,
+  ActivityPortfolioItem,
+  ActivityPortfolioResult,
+} from "@/features/activities/types/activity";
 import { createClient } from "@/lib/supabase/server";
 
+const ACTIVITY_PORTFOLIO_LIMIT = 300;
+const ACTIVITY_PORTFOLIO_SELECT =
+  "id, application_id, activity_type, title, notes, occurred_at, application:applications!application_activities_application_owner_fkey(id, job_title, archived_at, company:companies!applications_company_owner_fkey(id, name))" as const;
+
 const emptyToNull = (value: string) => (value === "" ? null : value);
+
+export async function getActivityPortfolio(
+  userId: string,
+  filter: ActivityPortfolioFilter,
+  now = new Date().toISOString(),
+): Promise<ActivityPortfolioResult> {
+  const supabase = await createClient();
+  const { data, count, error } = await supabase
+    .from("application_activities")
+    .select(ACTIVITY_PORTFOLIO_SELECT, { count: "exact" })
+    .eq("user_id", userId)
+    .order("occurred_at", { ascending: false })
+    .order("id")
+    .range(0, ACTIVITY_PORTFOLIO_LIMIT - 1);
+
+  if (error) throw new Error("Não foi possível carregar as interações.");
+
+  const activities = data satisfies ActivityPortfolioItem[];
+  return {
+    items: filterAndSortActivityPortfolio(activities, filter),
+    summary: summarizeActivityPortfolio(activities, now),
+    isLimited: (count ?? activities.length) > activities.length,
+  };
+}
 
 export async function insertActivity(
   userId: string,
