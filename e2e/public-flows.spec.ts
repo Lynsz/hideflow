@@ -93,6 +93,19 @@ test("protege a central de interações e preserva o filtro", async ({
   ).toBeVisible();
 });
 
+test("protege o portfólio de tecnologias e preserva o filtro", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/tecnologias?status=active");
+
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fdashboard%2Ftecnologias%3Fstatus%3Dactive$/,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Bem-vinda de volta" }),
+  ).toBeVisible();
+});
+
 test("protege a central de aprendizados e preserva os filtros", async ({
   page,
 }) => {
