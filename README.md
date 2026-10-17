@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 41 implementada no código — central privada de interações, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 42 implementada no código — portfólio privado de tecnologias, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -842,6 +842,18 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - A central considera até 300 interações recentes e informa explicitamente quando o histórico visível foi limitado.
 - A etapa reutiliza a tabela `application_activities`, suas relações e policies; não adiciona migration, dependência ou privilégio.
 
+## Etapa 42: portfólio privado de tecnologias
+
+`/dashboard/tecnologias` consolida as tags estruturadas existentes por tecnologia. A página mostra tecnologias mapeadas, vínculos registrados, candidaturas ativas com tags e a tecnologia mais recorrente; os filtros de todas, processos ativos e candidaturas arquivadas permanecem na URL. Cada tecnologia lista somente os vínculos contextuais necessários e leva de volta à candidatura de origem.
+
+### Dados, segurança e performance
+
+- A página é um Server Component protegido; a consulta repete o `user_id` da sessão e continua submetida às policies RLS já existentes.
+- A agregação é derivada dos vínculos entre `application_technologies`, tecnologias e candidaturas. Ela não cria contadores, cópias ou estado paralelo.
+- Cada consulta seleciona somente os identificadores, nomes e dados de contexto necessários para exibir a lista e navegar até a candidatura.
+- O portfólio considera até 300 vínculos mais recentes e informa explicitamente quando esse limite reduz o histórico visível.
+- A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -945,6 +957,7 @@ A suíte automatizada cobre:
 - classificação de lembretes e proteção da central com preservação do filtro;
 - classificação, resumo, filtros e ordenação determinística do portfólio de propostas;
 - classificação, resumo, filtros, ordenação e proteção de rota da central de interações;
+- agrupamento, filtros, resumo, ordenação e proteção de rota do portfólio de tecnologias;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -1006,6 +1019,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 39:** visão operacional de lembretes
 - [x] **Etapa 40:** portfólio operacional de propostas
 - [x] **Etapa 41:** central privada de interações
+- [x] **Etapa 42:** portfólio privado de tecnologias
 
 ## Licença
 
