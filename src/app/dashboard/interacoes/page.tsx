@@ -1,8 +1,8 @@
 import {
   CalendarDays,
   ClipboardList,
-  Linkedin,
   MessageSquareText,
+  Send,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
@@ -86,7 +86,7 @@ export default async function ActivitiesPage({
         <MetricCard
           label="Contatos enviados"
           value={result.summary.outreach}
-          icon={Linkedin}
+          icon={Send}
         />
         <MetricCard
           label="Processos com histórico"
