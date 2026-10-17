@@ -20,6 +20,7 @@ import {
   SquareKanban,
   Target,
   TrendingUp,
+  Braces,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -67,6 +68,11 @@ const navigationItems: NavigationItem[] = [
     label: "Documentos",
     href: "/dashboard/documentos",
     icon: FileStack,
+  },
+  {
+    label: "Tecnologias",
+    href: "/dashboard/tecnologias",
+    icon: Braces,
   },
   {
     label: "Interações",
