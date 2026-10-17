@@ -2,7 +2,7 @@
 
 Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivos e transformar a busca por emprego em um fluxo claro e mensurável.
 
-> Status: **Etapa 40 implementada no código — portfólio operacional de propostas, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
+> Status: **Etapa 41 implementada no código — central privada de interações, além das etapas anteriores.** Para usar os fluxos reais, ainda é necessário criar/conectar um projeto Supabase HireFlow, aplicar as migrations e preencher o `.env.local`.
 
 > Segurança em 22/09/2026: Next.js, Vitest e dependências indiretas afetadas foram atualizados para versões corrigidas. A instalação bloqueada pelo `package-lock.json` foi validada com `npm audit` sem vulnerabilidades conhecidas.
 
@@ -58,6 +58,7 @@ Plataforma Full Stack para organizar candidaturas, acompanhar processos seletivo
 - Importação CSV com prévia, validação, deduplicação e transação atômica
 - Agenda unificada de entrevistas e lembretes com download em iCalendar
 - Registro manual de anotações, e-mails, ligações, LinkedIn e outras interações por candidatura
+- Central de interações com métricas, filtros e atalhos para cada candidatura
 - Arquivamento e restauração de candidaturas sem excluir histórico ou registros relacionados
 - Portfólio de propostas com prazos de decisão, filtros e comparação de remuneração, bônus e condições
 - Central de prioridades com prazos críticos, entrevistas próximas e candidaturas paradas
@@ -829,6 +830,18 @@ Cada empresa agora possui uma página própria em `/dashboard/empresas/[id]`. O 
 - A leitura considera até 300 propostas recentes e informa explicitamente quando esse limite é atingido.
 - A etapa reutiliza o modelo existente e não adiciona tabela, migration, dependência ou privilégio.
 
+## Etapa 41: central privada de interações
+
+`/dashboard/interacoes` reúne anotações e contatos manuais de todos os processos. Os indicadores mostram o total de registros, contatos realizados, candidaturas com histórico e interações dos últimos sete dias; filtros por contato, anotação e LinkedIn permanecem na URL e cada item aponta de volta para a candidatura de origem.
+
+### Dados, segurança e performance
+
+- A página permanece um Server Component protegido; a consulta repete o `user_id` da sessão e continua submetida às policies RLS existentes.
+- A classificação de contatos reutiliza os tipos estruturados já usados pelas metas de produtividade. Nenhum tipo, contador ou estado paralelo é persistido.
+- Cada leitura seleciona apenas os campos exibidos, além do vínculo mínimo de candidatura e empresa necessário para a navegação contextual.
+- A central considera até 300 interações recentes e informa explicitamente quando o histórico visível foi limitado.
+- A etapa reutiliza a tabela `application_activities`, suas relações e policies; não adiciona migration, dependência ou privilégio.
+
 ## Row Level Security
 
 RLS nasce habilitado em todas as tabelas de dados do usuário.
@@ -931,6 +944,7 @@ A suíte automatizada cobre:
 - proteção da rota e preservação dos filtros do portfólio de candidaturas;
 - classificação de lembretes e proteção da central com preservação do filtro;
 - classificação, resumo, filtros e ordenação determinística do portfólio de propostas;
+- classificação, resumo, filtros, ordenação e proteção de rota da central de interações;
 - schema de lembretes, limites de texto e datas ISO;
 - schema de interações manuais, tipos controlados, limites de texto e identificadores;
 - filtros de arquivamento, URLs paginadas e mutation validada de arquivar/restaurar;
@@ -991,6 +1005,7 @@ Os testes de RLS devem ser executados contra a stack local ou projeto de desenvo
 - [x] **Etapa 38:** resumo do portfólio de candidaturas
 - [x] **Etapa 39:** visão operacional de lembretes
 - [x] **Etapa 40:** portfólio operacional de propostas
+- [x] **Etapa 41:** central privada de interações
 
 ## Licença
 
